@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/brand_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/app_logo.dart';
 import '../../widgets/common.dart';
 
 class CertificateScreen extends StatefulWidget {
@@ -188,13 +189,12 @@ class _CertificateScreenState extends State<CertificateScreen> {
       ),
       child: Column(
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.workspace_premium_rounded,
-                  color: AppColors.softYellow, size: 40),
-              SizedBox(width: 12),
-              Text('MT ALCHEMY',
+              const AppLogoMark(size: 52, radius: 14),
+              const SizedBox(width: 14),
+              const Text('MT ALCHEMY',
                   style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,

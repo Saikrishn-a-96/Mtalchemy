@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'app_logo.dart';
 
 class PortalNavItem {
   final String label;
@@ -44,34 +45,9 @@ class _PortalShellState extends State<PortalShell> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.deepBlue, AppColors.purple],
-                  ),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: const Center(
-                  child: Text('MT',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13)),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text('MT ALCHEMY',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        letterSpacing: .5)),
-              ),
-            ],
+          child: AppLogo(
+            markSize: 36,
+            onTap: null,
           ),
         ),
         Container(

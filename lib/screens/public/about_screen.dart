@@ -593,10 +593,9 @@ class _Founder extends StatelessWidget {
               height: 240,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(28),
-                gradient: const LinearGradient(
-                  colors: [AppColors.deepBlue, AppColors.purple],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+                color: AppColors.ink,
+                border: Border.all(
+                  color: AppColors.softYellow.withValues(alpha: .5),
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -606,15 +605,13 @@ class _Founder extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Center(
-                child: Text(
-                  'MT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 64,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                  ),
+              clipBehavior: Clip.antiAlias,
+              child: Semantics(
+                label: 'MT Alchemy logo',
+                image: true,
+                child: Image.asset(
+                  'assets/logo-mark.png',
+                  fit: BoxFit.cover,
                 ),
               ),
             ),

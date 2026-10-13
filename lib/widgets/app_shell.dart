@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../data/brand_data.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import 'app_logo.dart';
 import 'common.dart';
 
 /// Public site chrome: adaptive top navigation (AppBar + Drawer) and footer.
@@ -134,70 +135,7 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.deepBlue, AppColors.purple],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.deepBlue.withValues(alpha: .28),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Text(
-                'MT',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                  letterSpacing: .5,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 11),
-          const Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MT ALCHEMY',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16.5,
-                  letterSpacing: .6,
-                  color: AppColors.ink,
-                ),
-              ),
-              Text(
-                'CONSULTANCY · TRAINING · OD',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.muted,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    return AppLogo(markSize: 40, onTap: onTap);
   }
 }
 

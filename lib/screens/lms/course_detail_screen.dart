@@ -320,18 +320,22 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                               width: 56,
                               height: 56,
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                    colors: [
-                                      AppColors.deepBlue,
-                                      AppColors.purple
-                                    ]),
+                                color: AppColors.ink,
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: const Center(
-                                child: Text('MT',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w800)),
+                              clipBehavior: Clip.antiAlias,
+                              child: Image.asset(
+                                'assets/logo-mark.png',
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stack) =>
+                                        const Center(
+                                  child: Text('MT',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight:
+                                              FontWeight.w800)),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 14),
