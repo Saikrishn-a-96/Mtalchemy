@@ -193,23 +193,29 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: pad,
-              child: Row(
-                mainAxisSize: widget.wide ? MainAxisSize.max : MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: fg,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
+              // Scale the label down instead of overflowing on narrow
+              // screens; the button keeps its allotted width.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize:
+                      widget.wide ? MainAxisSize.max : MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        color: fg,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  if (widget.icon != null) ...[
-                    const SizedBox(width: 8),
-                    Icon(widget.icon, color: fg, size: 18),
+                    if (widget.icon != null) ...[
+                      const SizedBox(width: 8),
+                      Icon(widget.icon, color: fg, size: 18),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -272,26 +278,29 @@ class _GhostButtonState extends State<GhostButton> {
             padding: widget.compact
                 ? const EdgeInsets.symmetric(horizontal: 15, vertical: 10)
                 : const EdgeInsets.symmetric(horizontal: 25, vertical: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: fg,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: fg,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                if (widget.icon != null) ...[
-                  const SizedBox(width: 8),
-                  Icon(
-                    widget.icon,
-                    size: 18,
-                    color: fg,
-                  ),
+                  if (widget.icon != null) ...[
+                    const SizedBox(width: 8),
+                    Icon(
+                      widget.icon,
+                      size: 18,
+                      color: fg,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

@@ -73,30 +73,36 @@ class _PageHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final narrow = isMobile(context);
+    // The text column is the sizing child so the hero grows with its
+    // content; the photo and gradient sit behind via Positioned.fill.
+    return Container(
       width: double.infinity,
-      height: 340,
+      constraints: const BoxConstraints(minHeight: 340),
       child: Stack(
-        fit: StackFit.expand,
         children: [
-          NetworkImg(url: image),
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.deepBlue.withValues(alpha: .94),
-                  AppColors.deepBlue.withValues(alpha: .62),
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+          Positioned.fill(child: NetworkImg(url: image)),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.deepBlue.withValues(alpha: .94),
+                    AppColors.deepBlue.withValues(alpha: .62),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
               ),
             ),
           ),
-          Center(
-            child: PageWidth(
+          PageWidth(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 44),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     eyebrow.toUpperCase(),
@@ -113,15 +119,19 @@ class _PageHero extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .displayMedium
-                        ?.copyWith(color: Colors.white, fontSize: 44),
+                        ?.copyWith(
+                            color: Colors.white,
+                            fontSize: narrow ? 34 : 44),
                   ),
                   const SizedBox(height: 14),
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
+                    constraints:
+                        const BoxConstraints(maxWidth: 640),
                     child: Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: .85),
+                        color: Colors.white
+                            .withValues(alpha: .85),
                         fontSize: 16,
                         height: 1.6,
                       ),
@@ -270,8 +280,10 @@ class _VisionMission extends StatelessWidget {
             return Column(
                 children: [vision, const SizedBox(height: 22), mission]);
           }
+          // NOTE: start (not stretch) — stretch forces infinite height
+          // inside a vertical scroll view and blanks the section.
           return Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(child: vision),
               const SizedBox(width: 22),
@@ -376,8 +388,9 @@ class _Approach extends StatelessWidget {
                 }
                 rows.add(Padding(
                   padding: const EdgeInsets.only(bottom: 16),
+                  // NOTE: start (not stretch) — see _VisionMission.
                   child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: children),
                 ));
               }

@@ -146,55 +146,85 @@ class _Head extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final narrow = isMobile(context);
+    // Text column sizes the hero; photo and overlay sit behind it.
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.deepBlue, AppColors.indigo],
-        ),
-      ),
-      child: PageWidth(
-        padding: const EdgeInsets.symmetric(vertical: 58, horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('SERVICES',
-                style: TextStyle(
-                    color: AppColors.softYellow,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 2,
-                    fontSize: 12)),
-            const SizedBox(height: 14),
-            Text(
-              'Programmes that change behaviour,\nnot just attendance',
-              style: Theme.of(context)
-                  .textTheme
-                  .displayMedium
-                  ?.copyWith(color: Colors.white, fontSize: 42),
-            ),
-            const SizedBox(height: 14),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: Text(
-                'Every engagement is designed around your organisation’s reality — audience, constraints and the outcomes you need to see.',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: .84),
-                    fontSize: 16,
-                    height: 1.65),
+      constraints: const BoxConstraints(minHeight: 380),
+      child: Stack(
+        children: [
+          // Reference photo: a corporate training workshop in session.
+          // Same licensed Unsplash source used across the site (see Media).
+          const Positioned.fill(
+            child: NetworkImg(url: Media.workshop),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.deepBlue.withValues(alpha: .94),
+                    AppColors.deepBlue.withValues(alpha: .68),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: 'Get a Free Consultation',
-              icon: Icons.event_available_rounded,
-              onPressed: () => Navigator.pushNamed(context, '/contact',
-                  arguments: const {
-                    'type': 'Corporate Training',
-                    'topic': 'Free consultation',
-                  }),
+          ),
+          PageWidth(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 44),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('SERVICES',
+                      style: TextStyle(
+                          color: AppColors.softYellow,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 2,
+                          fontSize: 12)),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Programmes that change behaviour, not just attendance',
+                    style: Theme.of(context)
+                        .textTheme
+                        .displayMedium
+                        ?.copyWith(
+                            color: Colors.white,
+                            fontSize: narrow ? 32 : 42),
+                  ),
+                  const SizedBox(height: 14),
+                  ConstrainedBox(
+                    constraints:
+                        const BoxConstraints(maxWidth: 640),
+                    child: Text(
+                      'Every engagement is designed around your organisation’s reality — audience, constraints and the outcomes you need to see.',
+                      style: TextStyle(
+                          color: Colors.white
+                              .withValues(alpha: .84),
+                          fontSize: 16,
+                          height: 1.65),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  PrimaryButton(
+                    label: 'Get a Free Consultation',
+                    icon: Icons.event_available_rounded,
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/contact',
+                            arguments: const {
+                              'type': 'Corporate Training',
+                              'topic': 'Free consultation',
+                            }),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -391,7 +421,11 @@ class _Programmes extends StatelessWidget {
                                   CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Row(
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  crossAxisAlignment:
+                                      WrapCrossAlignment.center,
                                   children: [
                                     Tag(
                                       label: p.$2,
@@ -399,9 +433,8 @@ class _Programmes extends StatelessWidget {
                                           ? AppColors.teal
                                           : AppColors.purple,
                                     ),
-                                    const Spacer(),
-                                    Text('Enquire for pricing',
-                                        style: const TextStyle(
+                                    const Text('Enquire for pricing',
+                                        style: TextStyle(
                                             fontSize: 12,
                                             color: AppColors.muted,
                                             fontWeight: FontWeight.w600)),
@@ -511,8 +544,11 @@ class _Coaching extends StatelessWidget {
                                 color: AppColors.deepBlue)),
                       ),
                       const SizedBox(width: 12),
-                      Text(step.$2,
-                          style: const TextStyle(fontSize: 14.5)),
+                      Expanded(
+                        child: Text(step.$2,
+                            style:
+                                const TextStyle(fontSize: 14.5)),
+                      ),
                     ],
                   ),
                 ),
