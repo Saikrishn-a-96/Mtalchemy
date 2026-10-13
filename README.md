@@ -35,6 +35,8 @@ library, employees). `main.dart` wraps `MaterialApp` in a
 `ListenableBuilder` so every `notifyListeners()` rebuilds the UI, and
 checkout is committed atomically via `AppState.checkout()`.
 
+live site:  https://saikrishn-a-96.github.io/Mtalchemy/
+
 ## Verify
 
 - `flutter analyze` — no issues.
