@@ -126,11 +126,11 @@ class _WhoWeAre extends StatelessWidget {
                 eyebrow: 'Who we are',
                 title: 'Sustainable success is built from the inside out',
                 subtitle:
-                    'Founded on the belief that lasting transformation begins with understanding both people and systems, we help organizations cultivate self-awareful individuals, resilient teams and healthy workplace cultures.',
+                    'Founded on the belief that lasting transformation begins with understanding both people and systems, we help organizations cultivate self-aware individuals, resilient teams and healthy workplace cultures.',
               ),
               const SizedBox(height: 24),
               Text(
-                'Through experiential learning, practical tools and meaningful reflection, we translate insight into lasting behavioural change â€” when people grow, teams flourish, and organizations thrive.',
+                'Through experiential learning, practical tools and meaningful reflection, we translate insight into lasting behavioural change \u2014 when people grow, teams flourish, and organizations thrive.',
                 style: const TextStyle(height: 1.7, fontSize: 15.5),
               ),
             ],
@@ -232,7 +232,7 @@ class _VisionMission extends StatelessWidget {
           final vision = card(
               'v',
               'Vision',
-              'To develop authentic leaders with emotional strength who can navigate personal and professional relationships with clarity and confidence in todayâ€™s technology-driven world.',
+              'To develop authentic leaders with emotional strength who can navigate personal and professional relationships with clarity and confidence in today\u2019s technology-driven world.',
               AppColors.deepBlue);
           final mission = card(
               'm',
@@ -508,21 +508,29 @@ class _Impact extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final cross = type == ScreenType.mobile
+              // Content-sized cards: each StoryCard sizes to its own text
+              // instead of stretching to a fixed grid aspect ratio (which
+              // left large blank areas inside shorter cards).
+              final perRow = type == ScreenType.mobile
                   ? 1
                   : type == ScreenType.tablet
                       ? 2
                       : 3;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.78,
-                children: [
-                  for (final s in Content.stories) StoryCard(story: s),
-                ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW =
+                      perRow == 1 ? w : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final s in Content.stories)
+                        SizedBox(width: itemW, child: StoryCard(story: s)),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -648,57 +656,73 @@ class _Team extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final cross = type == ScreenType.mobile
+              // Content-sized cards (see _Impact): avoids tall blank cells
+              // from a fixed grid aspect ratio.
+              final perRow = type == ScreenType.mobile
                   ? 1
                   : type == ScreenType.tablet
                       ? 2
                       : 3;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.82,
-                children: [
-                  for (final m in members)
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          NetworkImg(
-                            url: m.$4,
-                            width: 76,
-                            height: 76,
-                            radius: BorderRadius.circular(20),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(m.$1,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 17,
-                                  color: AppColors.ink)),
-                          const SizedBox(height: 6),
-                          Text(m.$2,
-                              style: const TextStyle(
-                                  fontSize: 13, color: AppColors.purple)),
-                          const SizedBox(height: 10),
-                          Text(m.$3,
-                              style: const TextStyle(fontSize: 13.5, height: 1.55)),
-                        ],
-                      ),
-                    ),
-                ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW =
+                      perRow == 1 ? w : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final m in members)
+                        SizedBox(width: itemW, child: _MemberCard(member: m)),
+                    ],
+                  );
+                },
               );
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MemberCard extends StatelessWidget {
+  final (String, String, String, String) member;
+  const _MemberCard({required this.member});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          NetworkImg(
+            url: member.$4,
+            width: 76,
+            height: 76,
+            radius: BorderRadius.circular(20),
+          ),
+          const SizedBox(height: 16),
+          Text(member.$1,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 17,
+                  color: AppColors.ink)),
+          const SizedBox(height: 6),
+          Text(member.$2,
+              style:
+                  const TextStyle(fontSize: 13, color: AppColors.purple)),
+          const SizedBox(height: 10),
+          Text(member.$3,
+              style: const TextStyle(fontSize: 13.5, height: 1.55)),
         ],
       ),
     );
