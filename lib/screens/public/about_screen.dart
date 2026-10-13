@@ -6,8 +6,34 @@ import '../../theme/app_theme.dart';
 import '../../widgets/cards.dart';
 import '../../widgets/common.dart';
 
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends StatefulWidget {
   const AboutScreen({super.key});
+
+  @override
+  State<AboutScreen> createState() => _AboutScreenState();
+}
+
+class _AboutScreenState extends State<AboutScreen> {
+  final _impactKey = GlobalKey();
+  bool _scrolled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_scrolled) return;
+    _scrolled = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['section'] == 'impact') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _impactKey.currentContext;
+        if (ctx != null) {
+          Scrollable.ensureVisible(ctx,
+              duration: const Duration(milliseconds: 600),
+              alignment: 0.05);
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +50,7 @@ class AboutScreen extends StatelessWidget {
         _VisionMission(),
         _Approach(),
         _WhyEq(),
-        _Impact(),
+        Container(key: _impactKey, child: _Impact()),
         _Founder(),
         _Team(),
         _Cta(),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../data/brand_data.dart';
+import '../../data/reporting.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/portal_shell.dart';
@@ -10,19 +12,83 @@ import 'employer_dashboard_screen.dart';
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
 
-  static const _deptData = [
-    ('Human Resources', 0.9, '90%', '4 learners'),
-    ('Finance', 1.0, '100%', '2 learners'),
-    ('Operations', 0.45, '45%', '3 learners'),
-    ('Sales', 0.1, '10%', '2 learners'),
-  ];
+  void _exportCsv(BuildContext context) {
+    final csv =
+        Reporting.performanceCsv(AppState.instance.roster);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.table_chart_rounded, color: AppColors.indigo),
+            SizedBox(width: 10),
+            Text('Export report (CSV)'),
+          ],
+        ),
+        content: SizedBox(
+          width: 560,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Generated from the current learner roster. Copy it into any spreadsheet app.',
+                style: TextStyle(fontSize: 13.5, height: 1.5),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.bg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(csv,
+                      style: const TextStyle(
+                          fontFamily: 'monospace', fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          FilledButton.icon(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: csv));
+              if (ctx.mounted) Navigator.pop(ctx);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('CSV copied to clipboard')),
+                );
+              }
+            },
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            label: const Text('Copy CSV'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final state = AppState.instance;
+    final stats = Reporting.reportStats(state.roster);
+    final depts = Reporting.departmentPerformance(state.roster);
+    final certified =
+        state.roster.where((e) => e.progress >= 100).toList();
 
     return PortalShell(
       title: 'Corporate learning reports',
-      subtitle: 'Overall, department and individual performance · export ready',
+      subtitle: 'Overall, department and individual performance · sample data',
       activeRoute: '/employer/reports',
       items: EmployerDashboardScreen.items,
       child: Column(
@@ -31,23 +97,15 @@ class ReportsScreen extends StatelessWidget {
           Row(
             children: [
               const Expanded(
-                child: Text('Reporting period: 1 Sep – 12 Oct 2026',
+                child: Text('Reporting period: 1 Sep – 12 Oct 2026 · sample data',
                     style: TextStyle(
                         color: AppColors.muted, fontWeight: FontWeight.w600)),
               ),
               PrimaryButton(
-                label: 'Export PDF',
-                icon: Icons.picture_as_pdf_outlined,
+                label: 'Export CSV',
+                icon: Icons.table_chart_rounded,
                 compact: true,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Generating PDF report…'))),
-              ),
-              const SizedBox(width: 10),
-              GhostButton(
-                label: 'Export Excel/CSV',
-                compact: true,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Generating CSV report…'))),
+                onPressed: () => _exportCsv(context),
               ),
             ],
           ),
@@ -56,23 +114,23 @@ class ReportsScreen extends StatelessWidget {
             builder: (context, type) {
               final tiles = [
                 StatTile(
-                    value: '11',
+                    value: '${stats.enrolments}',
                     label: 'Enrolments',
                     icon: Icons.menu_book_rounded,
                     accent: AppColors.deepBlue),
                 StatTile(
-                    value: '7',
+                    value: '${stats.completions}',
                     label: 'Completions',
                     icon: Icons.check_rounded,
                     accent: AppColors.success),
                 StatTile(
-                    value: '86%',
+                    value: '${stats.averageScore}%',
                     label: 'Average score',
                     icon: Icons.grade_rounded,
                     accent: AppColors.softYellow),
                 StatTile(
-                    value: '48h',
-                    label: 'Learning hours',
+                    value: '${stats.learningHours}h',
+                    label: 'Assigned learning hours',
                     icon: Icons.schedule_rounded,
                     accent: AppColors.purple),
               ];
@@ -101,9 +159,11 @@ class ReportsScreen extends StatelessWidget {
             builder: (context, type) {
               final dept = Panel(
                 title: 'Department performance',
+                trailing: const Tag(
+                    label: 'SAMPLE', color: AppColors.warning),
                 child: Column(
                   children: [
-                    for (final d in _deptData)
+                    for (final d in depts)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 18),
                         child: Column(
@@ -111,17 +171,17 @@ class ReportsScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(d.$1,
+                                Text(d.department,
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14)),
                                 const SizedBox(width: 10),
-                                Text(d.$4,
+                                Text(d.learnersLabel,
                                     style: const TextStyle(
                                         fontSize: 12.5,
                                         color: AppColors.muted)),
                                 const Spacer(),
-                                Text(d.$3,
+                                Text('${d.averageProgress}%',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w800,
                                         color: AppColors.deepBlue)),
@@ -129,7 +189,9 @@ class ReportsScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: d.$2),
+                              tween: Tween(
+                                  begin: 0,
+                                  end: d.averageProgress / 100),
                               duration: 900.ms,
                               curve: Curves.easeOutCubic,
                               builder: (context, v, _) => ClipRRect(
@@ -139,7 +201,7 @@ class ReportsScreen extends StatelessWidget {
                                   minHeight: 10,
                                   backgroundColor: AppColors.border,
                                   valueColor: AlwaysStoppedAnimation(
-                                    d.$2 >= 1
+                                    d.averageProgress >= 100
                                         ? AppColors.success
                                         : AppColors.purple,
                                   ),
@@ -149,6 +211,11 @@ class ReportsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                    const Text(
+                      'Averages are computed live from each learner’s course progress.',
+                      style: TextStyle(
+                          fontSize: 12.5, color: AppColors.muted),
+                    ),
                   ],
                 ),
               );
@@ -157,8 +224,12 @@ class ReportsScreen extends StatelessWidget {
                 title: 'Certificates earned',
                 child: Column(
                   children: [
-                    for (final e in Content.employees
-                        .where((e) => e.progress == 100))
+                    if (certified.isEmpty)
+                      const Text(
+                        'No certificates yet — learners earn one by completing all modules and passing the quiz (4 of 5).',
+                        style: TextStyle(height: 1.6, fontSize: 13.5),
+                      ),
+                    for (final e in certified)
                       Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(14),
@@ -187,7 +258,9 @@ class ReportsScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Tag(label: 'MT-ALC-2026', color: AppColors.success),
+                            Tag(
+                                label: 'Score ${e.score}%',
+                                color: AppColors.success),
                           ],
                         ),
                       ),
@@ -215,6 +288,8 @@ class ReportsScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Panel(
             title: 'Individual performance',
+            trailing: const Tag(
+                label: 'SAMPLE', color: AppColors.warning),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
@@ -227,24 +302,24 @@ class ReportsScreen extends StatelessWidget {
                   DataColumn(label: Text('Status')),
                 ],
                 rows: [
-                  for (var i = 0; i < Content.employees.length; i++)
+                  for (final e in state.roster)
                     DataRow(cells: [
-                      DataCell(Text(Content.employees[i].name,
+                      DataCell(Text(e.name,
                           style: const TextStyle(fontWeight: FontWeight.w600))),
-                      DataCell(Text(Content.employees[i].department)),
+                      DataCell(Text(e.department)),
                       DataCell(SizedBox(
                           width: 250,
-                          child: Text(Content.employees[i].course,
-                              maxLines: 1))),
-                      DataCell(Text('${Content.employees[i].progress}%')),
-                      DataCell(Text(Content.employees[i].progress == 0
-                          ? '—'
-                          : '${70 + (i * 5) % 30}%')),
+                          child: Text(e.course,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis))),
+                      DataCell(Text('${e.progress}%')),
+                      DataCell(Text(e.score == 0 ? '—' : '${e.score}%')),
                       DataCell(Tag(
-                        label: Content.employees[i].status,
-                        color: Content.employees[i].status == 'Completed'
+                        label: e.status,
+                        color: e.status == 'Completed'
                             ? AppColors.success
-                            : Content.employees[i].status == 'Not Started'
+                            : e.status == 'Not Started' ||
+                                    e.status == 'Invited'
                                 ? AppColors.muted
                                 : AppColors.indigo,
                       )),

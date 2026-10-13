@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/brand_data.dart';
@@ -79,7 +80,22 @@ class _CertificateScreenState extends State<CertificateScreen> {
                         GhostButton(
                           label: 'Share',
                           compact: true,
-                          onPressed: issued ? () {} : null,
+                          onPressed: issued
+                              ? () async {
+                                  await Clipboard.setData(
+                                      const ClipboardData(
+                                          text:
+                                              'MT Alchemy certificate MT-ALC-2026-0148 — verify at MT Alchemy.'));
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Certificate reference copied to clipboard')),
+                                    );
+                                  }
+                                }
+                              : null,
                         ),
                       ],
                     );

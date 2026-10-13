@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/brand_data.dart';
+import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
 
@@ -32,9 +34,33 @@ class _ContactScreenState extends State<ContactScreen> {
     super.dispose();
   }
 
+  bool _prefilled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_prefilled) return;
+    _prefilled = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map) {
+      final type = '${args['type'] ?? ''}';
+      if (Brand.enquiryTypes.contains(type)) _type = type;
+      final topic = '${args['topic'] ?? ''}';
+      if (topic.isNotEmpty) {
+        _message.text = 'Hi MT Alchemy, I am interested in: $topic.\n\n';
+      }
+    }
+  }
+
   void _submit() {
     final ok = _enquiryForm.currentState!.validate();
     if (ok) {
+      AppState.instance.submitEnquiry(
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+        type: _type ?? Brand.enquiryTypes.first,
+        message: _message.text.trim(),
+      );
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -48,20 +74,14 @@ class _ContactScreenState extends State<ContactScreen> {
             ],
           ),
           content: Text(
-            'Thank you, ${_name.text.trim()}. MT Alchemy will contact you within 1 working day about your $_type enquiry.',
+            'Thank you, ${_name.text.trim()}. We aim to reply within 1 working day about your $_type enquiry. A copy is kept in this prototype session.',
             style: const TextStyle(height: 1.6),
           ),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                _enquiryForm.currentState!.reset();
-                _name.clear();
-                _email.clear();
-                _phone.clear();
-                _org.clear();
-                _message.clear();
-                setState(() => _type = Brand.enquiryTypes.first);
+                _clear();
               },
               child: const Text('Done'),
             ),
@@ -69,6 +89,16 @@ class _ContactScreenState extends State<ContactScreen> {
         ),
       );
     }
+  }
+
+  void _clear() {
+    _enquiryForm.currentState!.reset();
+    _name.clear();
+    _email.clear();
+    _phone.clear();
+    _org.clear();
+    _message.clear();
+    setState(() => _type = Brand.enquiryTypes.first);
   }
 
   @override
@@ -260,25 +290,19 @@ class _ContactScreenState extends State<ContactScreen> {
               },
             ),
             const SizedBox(height: 22),
-            Row(
+            Wrap(
+              spacing: 14,
+              runSpacing: 12,
               children: [
                 PrimaryButton(
                   label: 'Submit enquiry',
                   icon: Icons.send_rounded,
                   onPressed: _submit,
                 ),
-                const SizedBox(width: 14),
                 GhostButton(
                   label: 'Clear',
                   compact: true,
-                  onPressed: () {
-                    _enquiryForm.currentState!.reset();
-                    _name.clear();
-                    _email.clear();
-                    _phone.clear();
-                    _org.clear();
-                    _message.clear();
-                  },
+                  onPressed: _clear,
                 ),
               ],
             ),
@@ -344,7 +368,7 @@ class _ContactScreenState extends State<ContactScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
               const SizedBox(height: 14),
               for (final s in const [
-                'We acknowledge your enquiry within 1 working day.',
+                'We aim to acknowledge your enquiry within 1 working day.',
                 'A 30-minute discovery call to understand your goals.',
                 'You receive a proposed programme outline and quote.',
               ])
@@ -370,7 +394,7 @@ class _ContactScreenState extends State<ContactScreen> {
         const SizedBox(height: 20),
         Container(
           width: double.infinity,
-          height: 170,
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
@@ -378,19 +402,33 @@ class _ContactScreenState extends State<ContactScreen> {
             ),
             border: Border.all(color: AppColors.border),
           ),
-          child: const Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.map_rounded, size: 40, color: AppColors.indigo),
-                SizedBox(height: 8),
-                Text('Nilai, Negeri Sembilan, Malaysia',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, color: AppColors.ink)),
-                Text('Serving clients across Malaysia & Singapore',
-                    style: TextStyle(fontSize: 13)),
-              ],
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.map_rounded, size: 40, color: AppColors.indigo),
+              const SizedBox(height: 8),
+              const Text('Nilai, Negeri Sembilan, Malaysia',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700, color: AppColors.ink)),
+              const Text('Serving clients across Malaysia & Singapore',
+                  style: TextStyle(fontSize: 13)),
+              const SizedBox(height: 12),
+              GhostButton(
+                label: 'Copy address',
+                compact: true,
+                onPressed: () async {
+                  await Clipboard.setData(
+                      const ClipboardData(text: Brand.address));
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Address copied to clipboard')),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ),
       ],
@@ -409,39 +447,55 @@ class _ContactLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .14),
-              borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () async {
+          await Clipboard.setData(ClipboardData(text: value));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$label copied to clipboard')),
+            );
+          }
+        },
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 17, color: AppColors.softYellow),
             ),
-            child: Icon(icon, size: 17, color: AppColors.softYellow),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label.toUpperCase(),
-                    style: TextStyle(
-                        fontSize: 10.5,
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white.withValues(alpha: .7))),
-                const SizedBox(height: 3),
-                Text(value,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w600)),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label.toUpperCase(),
+                      style: TextStyle(
+                          fontSize: 10.5,
+                          letterSpacing: 1.2,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white.withValues(alpha: .7))),
+                  const SizedBox(height: 3),
+                  Text(value,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600)),
+                  const Text('Tap to copy',
+                      style: TextStyle(
+                          color: Colors.white60, fontSize: 11)),
+                ],
+              ),
             ),
-          ),
-        ],
+            const Icon(Icons.copy_rounded,
+                size: 15, color: Colors.white54),
+          ],
+        ),
       ),
     );
   }
@@ -486,43 +540,62 @@ class _QuickSignupState extends State<_QuickSignup> {
 
           final form = Form(
             key: _formKey,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Work email',
-                      hintText: 'you@company.com',
-                      prefixIcon: Icon(Icons.mail_outline_rounded),
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return 'Email address is required';
-                      }
-                      if (!RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$')
-                          .hasMatch(v.trim())) {
-                        return 'Invalid email format';
-                      }
-                      return null;
-                    },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final field = TextFormField(
+                  controller: _email,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Work email',
+                    hintText: 'you@company.com',
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
                   ),
-                ),
-                const SizedBox(width: 12),
-                PrimaryButton(
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Email address is required';
+                    }
+                    if (!RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$')
+                        .hasMatch(v.trim())) {
+                      return 'Invalid email format';
+                    }
+                    return null;
+                  },
+                );
+                final join = PrimaryButton(
                   label: 'Join',
                   onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You are on the list!')),
-                      );
-                      _email.clear();
-                    }
+                    if (!_formKey.currentState!.validate()) return;
+                    final email = _email.text.trim();
+                    final added = AppState.instance
+                        .subscribeNewsletter(email);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(added
+                              ? 'You are on the list!'
+                              : 'That email is already subscribed')),
+                    );
+                    if (added) _email.clear();
                   },
-                ),
-              ],
+                );
+                if (constraints.maxWidth < 420) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      field,
+                      const SizedBox(height: 12),
+                      join,
+                    ],
+                  );
+                }
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: field),
+                    const SizedBox(width: 12),
+                    join,
+                  ],
+                );
+              },
             ),
           );
 

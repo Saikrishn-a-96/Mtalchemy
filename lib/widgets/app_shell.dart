@@ -530,6 +530,25 @@ class AppFooter extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: .35)),
+                  ),
+                  child: const Text(
+                    'PROTOTYPE · SAMPLE DATA · NO REAL TRANSACTIONS',
+                    style: TextStyle(
+                      color: AppColors.softYellow,
+                      fontSize: 10,
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
                 _ContactRow(
                     icon: Icons.mail_outline_rounded, text: Brand.email),
                 const SizedBox(height: 8),

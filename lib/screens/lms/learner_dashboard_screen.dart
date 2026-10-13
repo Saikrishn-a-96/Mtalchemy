@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/brand_data.dart';
 import '../../data/models.dart';
+import '../../data/reporting.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
@@ -33,6 +34,18 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
     _name.dispose();
     _email.dispose();
     super.dispose();
+  }
+
+  /// Enrolled catalogue hours, resolved live from course durations.
+  int _courseHours(AppState state) {
+    final titles = [
+      for (final id in state.enrolled)
+        Content.courses
+            .firstWhere((c) => c.id == id,
+                orElse: () => Content.courses.first)
+            .title,
+    ];
+    return Reporting.learningHoursFor(titles);
   }
 
   @override
@@ -81,7 +94,7 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
                     icon: Icons.workspace_premium_rounded,
                     accent: AppColors.softYellow),
                 StatTile(
-                    value: '18h',
+                    value: '${_courseHours(state)}h',
                     label: 'Learning hours',
                     icon: Icons.schedule_rounded,
                     accent: AppColors.teal),
@@ -372,6 +385,7 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
   }
 
   Widget _achievements() {
+    final state = AppState.instance;
     return Panel(
       title: 'Achievements',
       child: Column(
@@ -379,13 +393,14 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
           Row(
             children: [
               _badge(Icons.workspace_premium_rounded, AppColors.softYellow,
-                  '${AppState.instance.certificateIssued ? 1 : 0}', 'Certificates'),
+                  '${state.certificateIssued ? 1 : 0}', 'Certificates'),
               const SizedBox(width: 12),
-              _badge(Icons.emoji_events_rounded, AppColors.purple, '4',
-                  'Completed lessons'),
+              _badge(Icons.emoji_events_rounded, AppColors.purple,
+                  '${state.completedLessons.length}',
+                  'Lessons completed'),
               const SizedBox(width: 12),
-              _badge(Icons.local_fire_department_rounded, AppColors.danger,
-                  '6', 'Day streak'),
+              _badge(Icons.menu_book_rounded, AppColors.teal,
+                  '${state.enrolled.length}', 'Courses enrolled'),
             ],
           ),
           const SizedBox(height: 16),
@@ -515,7 +530,7 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
                 GhostButton(
                   label: 'Change password',
                   compact: true,
-                  onPressed: () {},
+                  onPressed: () => _changePassword(context),
                 ),
               ],
             ),
@@ -525,8 +540,84 @@ class _LearnerDashboardScreenState extends State<LearnerDashboardScreen> {
     );
   }
 
-  Widget _ordersPanel(AppState state) {
-    return Panel(
+  void _changePassword(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
+    final current = TextEditingController();
+    final next = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Change password'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Prototype build: passwords are simulated — any 8+ character password is accepted and nothing leaves this device.',
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: current,
+                obscureText: true,
+                decoration: const InputDecoration(
+                    labelText: 'Current password *'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) {
+                    return 'Enter your current password';
+                  }
+                  if (v.length < 8) {
+                    return 'Use at least 8 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: next,
+                obscureText: true,
+                decoration:
+                    const InputDecoration(labelText: 'New password *'),
+                validator: (v) {
+                  if (v == null || v.isEmpty) {
+                    return 'Enter a new password';
+                  }
+                  if (v.length < 8) {
+                    return 'Use at least 8 characters';
+                  }
+                  if (v == current.text) {
+                    return 'Pick a different password';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!formKey.currentState!.validate()) return;
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Password updated (prototype)')),
+              );
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ordersPanel(AppState state) {    return Panel(
       title: 'My orders',
       trailing: TextButton(
         onPressed: () => Navigator.pushNamed(context, '/orders'),

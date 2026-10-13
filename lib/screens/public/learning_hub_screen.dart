@@ -16,6 +16,7 @@ class LearningHubScreen extends StatefulWidget {
 
 class _LearningHubScreenState extends State<LearningHubScreen> {
   String _category = 'All';
+  String _sort = 'Recommended';
   final _controller = TextEditingController();
 
   @override
@@ -26,7 +27,7 @@ class _LearningHubScreenState extends State<LearningHubScreen> {
 
   List<Course> get _filtered {
     final q = _controller.text.trim().toLowerCase();
-    return Content.courses.where((c) {
+    final list = Content.courses.where((c) {
       final okCat = _category == 'All' || c.category == _category;
       final okQ = q.isEmpty ||
           c.title.toLowerCase().contains(q) ||
@@ -34,13 +35,32 @@ class _LearningHubScreenState extends State<LearningHubScreen> {
           c.instructor.toLowerCase().contains(q);
       return okCat && okQ;
     }).toList();
+    switch (_sort) {
+      case 'Top rated':
+        list.sort((a, b) => b.rating.compareTo(a.rating));
+      case 'Price: low to high':
+        list.sort((a, b) => a.price.compareTo(b.price));
+      case 'Price: high to low':
+        list.sort((a, b) => b.price.compareTo(a.price));
+    }
+    return list;
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _category = 'All';
+      _controller.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _Banner(controller: _controller, onChanged: (_) => setState(() {})),
+        _Banner(
+          controller: _controller,
+          onChanged: (_) => setState(() => _category = 'All'),
+        ),
         Band(
           color: AppColors.surface,
           padding: const EdgeInsets.symmetric(vertical: 54),
@@ -80,7 +100,7 @@ class _LearningHubScreenState extends State<LearningHubScreen> {
               const SizedBox(height: 30),
               Row(
                 children: [
-                  Text('${_filtered.length} courses',
+                  Text('${_filtered.length} course(s)',
                       style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: AppColors.muted)),
@@ -88,35 +108,70 @@ class _LearningHubScreenState extends State<LearningHubScreen> {
                   const Icon(Icons.sort_rounded,
                       size: 18, color: AppColors.muted),
                   const SizedBox(width: 6),
-                  const Text('Most popular',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 13.5)),
+                  DropdownButton<String>(
+                    value: _sort,
+                    underline: const SizedBox(),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                        color: AppColors.ink),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'Recommended',
+                          child: Text('Recommended')),
+                      DropdownMenuItem(
+                          value: 'Top rated', child: Text('Top rated')),
+                      DropdownMenuItem(
+                          value: 'Price: low to high',
+                          child: Text('Price: low to high')),
+                      DropdownMenuItem(
+                          value: 'Price: high to low',
+                          child: Text('Price: high to low')),
+                    ],
+                    onChanged: (v) =>
+                        setState(() => _sort = v ?? 'Recommended'),
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
               if (_filtered.isEmpty)
-                const EmptyState(
+                EmptyState(
                   icon: Icons.search_off_rounded,
                   title: 'No courses found',
                   message:
-                      'Try a different keyword or reset the category filter to see all learning programmes.',
+                      'Try a different keyword or reset the filters to see all learning programmes.',
+                  action: GhostButton(
+                    label: 'Reset filters',
+                    compact: true,
+                    onPressed: _resetFilters,
+                  ),
                 )
               else
                 ResponsiveBuilder(
                   builder: (context, type) {
-                    final w = MediaQuery.sizeOf(context).width;
-                    final cross =
-                        w < 700 ? 1 : w < 1080 ? 2 : 3;
-                    return GridView.count(
-                      crossAxisCount: cross,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      childAspectRatio: 0.76,
-                      children: [
-                        for (final c in _filtered) CourseCard(course: c),
-                      ],
+                    final perRow = type == ScreenType.mobile
+                        ? 1
+                        : type == ScreenType.tablet
+                            ? 2
+                            : 3;
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        const gap = 20.0;
+                        final w = constraints.maxWidth;
+                        final itemW = perRow == 1
+                            ? w
+                            : (w - gap * (perRow - 1)) / perRow;
+                        return Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            for (final c in _filtered)
+                              SizedBox(
+                                  width: itemW,
+                                  child: CourseCard(course: c)),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),
@@ -248,9 +303,9 @@ class _LearnerPath extends StatelessWidget {
 
   static const steps = [
     ('Register', 'Create your learner profile in under a minute.'),
-    ('Browse & enrol', 'Pick a course and pay securely.'),
+    ('Browse & enrol', 'Pick a course — enrolment is instant in this prototype.'),
     ('Learn', 'Watch, read and download modular lessons.'),
-    ('Quiz & certificate', 'Pass the assessment and get certified.'),
+    ('Quiz & certificate', 'Score 4 of 5 on the quiz to get certified.'),
   ];
 
   @override
@@ -313,26 +368,27 @@ class _LearnerPath extends StatelessWidget {
                 );
               }
 
-              if (type == ScreenType.mobile) {
-                return Column(
-                  children: [
-                    for (var i = 0; i < steps.length; i++)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child:
-                            SizedBox(width: double.infinity, child: card(i)),
-                      ),
-                  ],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < steps.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 14),
-                    Expanded(child: card(i)),
-                  ],
-                ],
+              final perRow = type == ScreenType.mobile
+                  ? 1
+                  : type == ScreenType.tablet
+                      ? 2
+                      : 4;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 14.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (var i = 0; i < steps.length; i++)
+                        SizedBox(width: itemW, child: card(i)),
+                    ],
+                  );
+                },
               );
             },
           ),

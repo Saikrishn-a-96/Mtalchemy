@@ -60,6 +60,10 @@ class Product {
   final String blurb;
   final int stock;
 
+  /// Sample rating shown on the storefront (demo data, not a live review feed).
+  final double rating;
+  final int reviews;
+
   const Product({
     required this.id,
     required this.name,
@@ -69,6 +73,8 @@ class Product {
     required this.image,
     required this.blurb,
     this.stock = 40,
+    this.rating = 4.8,
+    this.reviews = 0,
   });
 }
 
@@ -127,7 +133,12 @@ class Employee {
   final String department;
   final String course;
   final int progress;
+
+  /// Latest assessment score (0 = not attempted). Sample data for the demo.
+  final int score;
   final String status;
+  final String email;
+  final String role;
 
   const Employee({
     required this.name,
@@ -135,6 +146,9 @@ class Employee {
     required this.course,
     required this.progress,
     required this.status,
+    this.score = 0,
+    this.email = '',
+    this.role = 'Learner',
   });
 }
 

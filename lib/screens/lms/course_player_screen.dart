@@ -252,17 +252,25 @@ class _CoursePlayerScreenState extends State<CoursePlayerScreen> {
               );
             }),
           const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.download_rounded,
-                  size: 17, color: AppColors.muted),
-              const SizedBox(width: 8),
-              Text('Download workbook (PDF)',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.deepBlue)),
-            ],
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'The workbook PDF ships with the full release — lessons and quizzes work in this prototype.')),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.download_rounded,
+                    size: 17, color: AppColors.muted),
+                SizedBox(width: 8),
+                Text('Download workbook (PDF)',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.deepBlue)),
+              ],
+            ),
           ),
         ],
       ),

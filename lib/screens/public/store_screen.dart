@@ -95,25 +95,46 @@ class _StoreScreenState extends State<StoreScreen> {
               const SizedBox(height: 26),
               ResponsiveBuilder(
                 builder: (context, type) {
-                  final w = MediaQuery.sizeOf(context).width;
-                  final cross = w < 700 ? 1 : w < 1080 ? 2 : 4;
                   final items = _filtered;
                   if (items.isEmpty) {
-                    return const EmptyState(
+                    return EmptyState(
                       icon: Icons.inventory_2_outlined,
                       title: 'No products here yet',
                       message:
                           'Switch the product type or category to browse other MT Alchemy materials.',
+                      action: GhostButton(
+                        label: 'Reset filters',
+                        compact: true,
+                        onPressed: () => setState(() {
+                          _type = 0;
+                          _category = categories.first;
+                        }),
+                      ),
                     );
                   }
-                  return GridView.count(
-                    crossAxisCount: cross,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.74,
-                    children: [for (final p in items) ProductCard(product: p)],
+                  final perRow = type == ScreenType.mobile
+                      ? 1
+                      : type == ScreenType.tablet
+                          ? 2
+                          : 4;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 20.0;
+                      final w = constraints.maxWidth;
+                      final itemW = perRow == 1
+                          ? w
+                          : (w - gap * (perRow - 1)) / perRow;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final p in items)
+                            SizedBox(
+                                width: itemW,
+                                child: ProductCard(product: p)),
+                        ],
+                      );
+                    },
                   );
                 },
               ),
@@ -166,38 +187,36 @@ class _StoreBanner extends StatelessWidget {
                     color: Colors.white.withValues(alpha: .1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
                     children: [
                       for (final (i, label) in const [
                         (0, 'All products'),
                         (1, 'Digital'),
                         (2, 'Physical')
                       ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 6),
-                          child: InkWell(
-                            onTap: () => onType(i),
-                            borderRadius: BorderRadius.circular(9),
-                            child: AnimatedContainer(
-                              duration: 200.ms,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 9),
-                              decoration: BoxDecoration(
+                        InkWell(
+                          onTap: () => onType(i),
+                          borderRadius: BorderRadius.circular(9),
+                          child: AnimatedContainer(
+                            duration: 200.ms,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 9),
+                            decoration: BoxDecoration(
+                              color: type == i
+                                  ? AppColors.softYellow
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: Text(
+                              label,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13.5,
                                 color: type == i
-                                    ? AppColors.softYellow
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: Text(
-                                label,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13.5,
-                                  color: type == i
-                                      ? AppColors.deepBlue
-                                      : Colors.white,
-                                ),
+                                    ? AppColors.deepBlue
+                                    : Colors.white,
                               ),
                             ),
                           ),
@@ -227,7 +246,9 @@ class _StoreBanner extends StatelessWidget {
                     style: TextStyle(fontSize: 14, height: 1.6),
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
                       PrimaryButton(
                         label: 'View cart ($cartCount)',
@@ -235,7 +256,6 @@ class _StoreBanner extends StatelessWidget {
                         onPressed: () =>
                             Navigator.pushNamed(context, '/cart'),
                       ),
-                      const SizedBox(width: 10),
                       GhostButton(
                         label: 'My orders',
                         compact: true,
@@ -322,25 +342,27 @@ class _StorePromise extends StatelessWidget {
             );
           }
 
-          if (type == ScreenType.mobile) {
-            return Column(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: SizedBox(width: double.infinity, child: card(i)),
-                  ),
-              ],
-            );
-          }
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0) const SizedBox(width: 16),
-                Expanded(child: card(i)),
-              ],
-            ],
+          final perRow = type == ScreenType.mobile
+              ? 1
+              : type == ScreenType.tablet
+                  ? 2
+                  : 4;
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 16.0;
+              final w = constraints.maxWidth;
+              final itemW = perRow == 1
+                  ? w
+                  : (w - gap * (perRow - 1)) / perRow;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (var i = 0; i < items.length; i++)
+                    SizedBox(width: itemW, child: card(i)),
+                ],
+              );
+            },
           );
         },
       ),

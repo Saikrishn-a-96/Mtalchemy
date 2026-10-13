@@ -17,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String _accountType = 'Individual';
   final _name = TextEditingController();
+  final _contact = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _confirm = TextEditingController();
@@ -42,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _contact.dispose();
     _email.dispose();
     _password.dispose();
     _confirm.dispose();
@@ -53,12 +55,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    AppState.instance
-        .signIn(name: _name.text.trim(), role: 'Individual Learner');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Registration success')),
+    final isOrg = _accountType == 'Organization';
+    final displayName = isOrg
+        ? _contact.text.trim()
+        : _name.text.trim();
+    final role = isOrg ? 'Employer' : 'Individual Learner';
+    final route = isOrg ? '/employer' : '/dashboard';
+    AppState.instance.signIn(name: displayName, role: role);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: AppColors.success),
+            SizedBox(width: 10),
+            Text('Account created'),
+          ],
+        ),
+        content: Text(
+          isOrg
+              ? 'Welcome, $displayName! Your organization workspace is ready — invite employees and assign courses.'
+              : 'Welcome, $displayName! Your learner account is ready — pick up a course from the Learning Hub.',
+          style: const TextStyle(height: 1.6),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                context, route, (r) => false),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
     );
-    Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (r) => false);
   }
 
   @override
@@ -88,14 +117,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             clipBehavior: Clip.antiAlias,
             child: narrow
                 ? Column(children: [_aside(), _formBody()])
-                : IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(flex: 5, child: _aside()),
-                        Expanded(flex: 7, child: _formBody()),
-                      ],
-                    ),
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 5, child: _aside()),
+                      Expanded(flex: 7, child: _formBody()),
+                    ],
                   ),
           ),
         ),
@@ -161,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
             ),
-          const Spacer(),
+          const SizedBox(height: 26),
           Text(
             'Already have an account?',
             style: TextStyle(color: Colors.white.withValues(alpha: .8)),
@@ -253,7 +280,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 16),
                 _fieldLabel('Contact person *'),
                 TextFormField(
-                  controller: _name,
+                  controller: _contact,
                   decoration: const InputDecoration(
                       hintText: 'e.g. Tan Wei Ming',
                       prefixIcon: Icon(Icons.person_outline_rounded)),
@@ -297,10 +324,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: [
-                  Expanded(
+                  SizedBox(
+                    width: 260,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -332,8 +361,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  SizedBox(
+                    width: 260,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -361,10 +390,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: [
-                  Expanded(
+                  SizedBox(
+                    width: 260,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -375,12 +406,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: const InputDecoration(
                               hintText: '+60 12-345 6789',
                               prefixIcon: Icon(Icons.phone_outlined)),
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return null;
+                            }
+                            if (v.trim().length < 8) {
+                              return 'Enter a valid phone number';
+                            }
+                            return null;
+                          },
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
+                  SizedBox(
+                    width: 220,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -423,14 +463,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              Row(
+              Wrap(
+                spacing: 14,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   PrimaryButton(
                     label: 'Create account',
                     icon: Icons.arrow_forward_rounded,
                     onPressed: _submit,
                   ),
-                  const SizedBox(width: 14),
                   TextButton(
                     onPressed: () =>
                         Navigator.pushReplacementNamed(context, '/login'),

@@ -27,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _Hero(asEmployer: _asEmployer, onToggle: (v) => setState(() => _asEmployer = v)),
         _AboutSection(),
         _WhatWeDo(),
-        _Upskilling(courses: Content.courses.sublist(0, 4)),
+        _Upskilling(courses: Content.courses.take(4).toList()),
         _CorporateBand(),
         _StorePreview(),
         _ImpactSection(),
@@ -80,9 +80,11 @@ class _Hero extends StatelessWidget {
                             border: Border.all(
                                 color: AppColors.softYellow, width: 1),
                           ),
-                          child: const Text(
-                            'PEOPLE DEVELOPMENT CONSULTANCY',
-                            style: TextStyle(
+                          child: Text(
+                            asEmployer
+                                ? 'FOR EMPLOYERS & HR TEAMS'
+                                : 'PEOPLE DEVELOPMENT CONSULTANCY',
+                            style: const TextStyle(
                               color: AppColors.softYellow,
                               fontWeight: FontWeight.w800,
                               fontSize: 11.5,
@@ -95,7 +97,9 @@ class _Hero extends StatelessWidget {
                       Reveal(
                         delayMs: 90,
                         child: Text(
-                          Brand.headline,
+                          asEmployer
+                              ? 'Build resilient teams that perform under pressure.'
+                              : Brand.headline,
                           style: Theme.of(context)
                               .textTheme
                               .displayMedium
@@ -108,7 +112,9 @@ class _Hero extends StatelessWidget {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 560),
                           child: Text(
-                            'Emotional intelligence, leadership development, team engagement and workplace well-being — delivered through experiential learning, coaching and digital programmes.',
+                            asEmployer
+                                ? 'Corporate training, team effectiveness and well-being programmes — with progress reports for every cohort you sponsor.'
+                                : 'Emotional intelligence, leadership development, team engagement and workplace well-being — delivered through experiential learning, coaching and digital programmes.',
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: .8),
                               fontSize: 16.5,
@@ -123,29 +129,46 @@ class _Hero extends StatelessWidget {
                         child: Wrap(
                           spacing: 14,
                           runSpacing: 14,
-                          children: [
-                            PrimaryButton(
-                              label: 'Work With Us',
-                              onDark: true,
-                              icon: Icons.handshake_rounded,
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/services'),
-                            ),
-                            GhostButton(
-                              label: 'Upskill With Us',
-                              light: true,
-                              icon: Icons.school_rounded,
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/upskilling'),
-                            ),
-                            GhostButton(
-                              label: 'Shop',
-                              light: true,
-                              icon: Icons.shopping_bag_rounded,
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/store'),
-                            ),
-                          ],
+                          children: asEmployer
+                              ? [
+                                  PrimaryButton(
+                                    label: 'Explore Corporate Training',
+                                    onDark: true,
+                                    icon: Icons.business_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/services'),
+                                  ),
+                                  GhostButton(
+                                    label: 'Open Employer Portal',
+                                    light: true,
+                                    icon: Icons.dashboard_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/employer'),
+                                  ),
+                                ]
+                              : [
+                                  PrimaryButton(
+                                    label: 'Work With Us',
+                                    onDark: true,
+                                    icon: Icons.handshake_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/services'),
+                                  ),
+                                  GhostButton(
+                                    label: 'Upskill With Us',
+                                    light: true,
+                                    icon: Icons.school_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/upskilling'),
+                                  ),
+                                  GhostButton(
+                                    label: 'Shop',
+                                    light: true,
+                                    icon: Icons.shopping_bag_rounded,
+                                    onPressed: () => Navigator.pushNamed(
+                                        context, '/store'),
+                                  ),
+                                ],
                         ),
                       ),
                       const SizedBox(height: 34),
@@ -471,7 +494,8 @@ class _AboutSection extends StatelessWidget {
                   ),
                   GhostButton(
                     label: 'Read our impact',
-                    onPressed: () => Navigator.pushNamed(context, '/about'),
+                    onPressed: () => Navigator.pushNamed(context, '/about',
+                        arguments: const {'section': 'impact'}),
                   ),
                 ],
               ),
@@ -593,6 +617,18 @@ class _ServiceTile extends StatefulWidget {
   final ServiceItem service;
   const _ServiceTile({required this.service});
 
+  /// Maps a service title to the Services directory filter tab.
+  static int _filterForStatic(String title) {
+    if (title.contains('Emotional')) return 1;
+    if (title.contains('Leadership')) return 2;
+    if (title.contains('Team')) return 3;
+    if (title.contains('Assessment')) return 4;
+    if (title.contains('CSR') || title.contains('Social Responsibility')) {
+      return 5;
+    }
+    return 6;
+  }
+
   @override
   State<_ServiceTile> createState() => _ServiceTileState();
 }
@@ -609,7 +645,10 @@ class _ServiceTileState extends State<_ServiceTile> {
       cursor: SystemMouseCursors.click,
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () => Navigator.pushNamed(context, '/services'),
+        onTap: () => Navigator.pushNamed(context, '/services',
+            arguments: {
+              'filter': _ServiceTile._filterForStatic(s.title)
+            }),
         child: AnimatedContainer(
           duration: 240.ms,
           transform: Matrix4.identity()..translateByDouble(0.0, _hover ? -5.0 : 0.0, 0.0, 1.0),
@@ -712,22 +751,28 @@ class _Upskilling extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final w = MediaQuery.sizeOf(context).width;
-              final cross = w < 700
+              final perRow = type == ScreenType.mobile
                   ? 1
-                  : w < 1080
+                  : type == ScreenType.tablet
                       ? 2
                       : 4;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.76,
-                children: [
-                  for (final c in courses) CourseCard(course: c),
-                ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final c in courses)
+                        SizedBox(
+                            width: itemW, child: CourseCard(course: c)),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -924,19 +969,28 @@ class _StorePreview extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final w = MediaQuery.sizeOf(context).width;
-              final cross = w < 700 ? 1 : w < 1080 ? 2 : 4;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.74,
-                children: [
-                  for (final p in Content.products.sublist(0, 4))
-                    ProductCard(product: p),
-                ],
+              final perRow = type == ScreenType.mobile
+                  ? 1
+                  : type == ScreenType.tablet
+                      ? 2
+                      : 4;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final p in Content.products.take(4))
+                        SizedBox(
+                            width: itemW, child: ProductCard(product: p)),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -967,22 +1021,29 @@ class _ImpactSection extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final cross = type == ScreenType.mobile
+              final perRow = type == ScreenType.mobile
                   ? 1
                   : type == ScreenType.tablet
                       ? 2
                       : 3;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: 0.78,
-                children: [
-                  for (final s in Content.stories.sublist(0, cross == 1 ? 3 : cross * 2 > 6 ? 6 : cross * 2))
-                    StoryCard(story: s),
-                ],
+              final count = perRow == 1 ? 3 : perRow * 2;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final s in Content.stories.take(count))
+                        SizedBox(
+                            width: itemW, child: StoryCard(story: s)),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -990,7 +1051,8 @@ class _ImpactSection extends StatelessWidget {
           GhostButton(
             label: 'See all impact stories',
             icon: Icons.arrow_forward_rounded,
-            onPressed: () => Navigator.pushNamed(context, '/about'),
+            onPressed: () => Navigator.pushNamed(context, '/about',
+                arguments: const {'section': 'impact'}),
           ),
         ],
       ),
@@ -1017,18 +1079,25 @@ class _Testimonials extends StatelessWidget {
           const SizedBox(height: 40),
           ResponsiveBuilder(
             builder: (context, type) {
-              final cross = type == ScreenType.mobile ? 1 : 3;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 20,
-                crossAxisSpacing: 20,
-                childAspectRatio: cross == 1 ? 1.15 : 0.95,
-                children: [
-                  for (final t in Content.testimonials)
-                    QuoteCard(data: t),
-                ],
+              final perRow =
+                  type == ScreenType.mobile ? 1 : 3;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 20.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final t in Content.testimonials)
+                        SizedBox(
+                            width: itemW, child: QuoteCard(data: t)),
+                    ],
+                  );
+                },
               );
             },
           ),

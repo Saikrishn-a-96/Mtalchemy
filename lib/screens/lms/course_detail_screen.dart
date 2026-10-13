@@ -21,9 +21,23 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Course c = widget.course is Course
-        ? widget.course as Course
-        : Content.courses.first;
+    if (widget.course is! Course) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 70),
+        child: EmptyState(
+          icon: Icons.school_outlined,
+          title: 'Course not found',
+          message:
+              'This course link is invalid. Browse the Learning Hub to find a course.',
+          action: PrimaryButton(
+            label: 'Browse courses',
+            onPressed: () =>
+                Navigator.pushNamed(context, '/upskilling'),
+          ),
+        ),
+      );
+    }
+    final Course c = widget.course as Course;
     final state = AppState.instance;
     final enrolled = state.isEnrolled(c.id);
 
@@ -118,7 +132,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                                 color: AppColors.deepBlue),
                           ),
                           const Spacer(),
-                          const Text('One-time payment',
+                          const Text('List price',
                               style: TextStyle(
                                   fontSize: 12.5, color: AppColors.muted)),
                         ],
@@ -136,7 +150,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       else ...[
                         PrimaryButton(
                           label: 'Enrol now',
-                          icon: Icons.shopping_cart_rounded,
+                          icon: Icons.school_rounded,
                           onPressed: () {
                             state.enrol(c.id);
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -147,11 +161,31 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                             Navigator.pushNamed(context, '/player');
                           },
                         ),
-                        const SizedBox(height: 10),
-                        GhostButton(
-                          label: 'Add to cart',
-                          compact: true,
-                          onPressed: () => Navigator.pushNamed(context, '/cart'),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.softYellow
+                                .withValues(alpha: .18),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: AppColors.softYellow),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.info_rounded,
+                                  size: 17,
+                                  color: AppColors.deepBlue),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Prototype build: enrolment is instant and free — the list price is shown for reference only.',
+                                  style: TextStyle(
+                                      fontSize: 12.5, height: 1.5),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                       const SizedBox(height: 16),
@@ -246,6 +280,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       title: c.curriculum[i],
                       open: _openModule == i,
                       index: i,
+                      isFinal: i == c.curriculum.length - 1,
                       onTap: () =>
                           setState(() => _openModule = _openModule == i ? -1 : i),
                     ),
@@ -348,7 +383,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                         ),
                         const SizedBox(height: 14),
                         PrimaryButton(
-                          label: 'See sample certificate',
+                          label: 'Preview certificate',
                           compact: true,
                           onPressed: () =>
                               Navigator.pushNamed(context, '/certificate'),
@@ -386,21 +421,31 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               const SizedBox(height: 32),
               ResponsiveBuilder(
                 builder: (context, type) {
-                  final w = MediaQuery.sizeOf(context).width;
-                  final cross = w < 700 ? 1 : w < 1080 ? 2 : 3;
-                  return GridView.count(
-                    crossAxisCount: cross,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.76,
-                    children: [
-                      for (final other in Content.courses
-                          .where((x) => x.id != c.id)
-                          .take(cross))
-                        CourseCard(course: other),
-                    ],
+                  final perRow = type == ScreenType.mobile
+                      ? 1
+                      : type == ScreenType.tablet
+                          ? 2
+                          : 3;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 20.0;
+                      final w = constraints.maxWidth;
+                      final itemW = perRow == 1
+                          ? w
+                          : (w - gap * (perRow - 1)) / perRow;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final other in Content.courses
+                              .where((x) => x.id != c.id)
+                              .take(3))
+                            SizedBox(
+                                width: itemW,
+                                child: CourseCard(course: other)),
+                        ],
+                      );
+                    },
                   );
                 },
               ),
@@ -436,11 +481,13 @@ class _ModuleTile extends StatelessWidget {
   final String title;
   final bool open;
   final int index;
+  final bool isFinal;
   final VoidCallback onTap;
   const _ModuleTile(
       {required this.title,
       required this.open,
       required this.index,
+      this.isFinal = false,
       required this.onTap});
 
   @override
@@ -500,13 +547,17 @@ class _ModuleTile extends StatelessWidget {
                 ? Padding(
                     padding: const EdgeInsets.fromLTRB(62, 0, 16, 16),
                     child: Column(
-                      children: const [
-                        _Lesson(icon: Icons.play_circle_outline_rounded,
-                            label: 'Video lesson · 12 min'),
-                        _Lesson(icon: Icons.article_outlined,
+                      children: [
+                        const _Lesson(
+                            icon: Icons.play_circle_outline_rounded,
+                            label: 'Video lesson'),
+                        const _Lesson(
+                            icon: Icons.article_outlined,
                             label: 'Reading · PDF workbook'),
-                        _Lesson(icon: Icons.quiz_outlined,
-                            label: 'Knowledge check · 5 questions'),
+                        if (isFinal)
+                          const _Lesson(
+                              icon: Icons.quiz_outlined,
+                              label: 'Knowledge check · 5 questions'),
                       ],
                     ),
                   )

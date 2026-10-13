@@ -15,6 +15,19 @@ class ServicesScreen extends StatefulWidget {
 
 class _ServicesScreenState extends State<ServicesScreen> {
   int _filter = 0;
+  bool _filterApplied = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_filterApplied) return;
+    _filterApplied = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['filter'] is int) {
+      final i = args['filter'] as int;
+      if (i >= 0 && i < _tabs.length) _filter = i;
+    }
+  }
 
   static const _tabs = [
     'All services',
@@ -33,8 +46,18 @@ class _ServicesScreenState extends State<ServicesScreen> {
     if (t.contains('leadership')) return s.title.contains('Leadership');
     if (t.contains('team')) return s.title.contains('Team');
     if (t.contains('assessment')) return s.title.contains('Assessment');
-    if (t.contains('csr')) return s.title.contains('CSR');
+    if (t.contains('csr')) {
+      return s.title.contains('CSR') ||
+          s.title.contains('Social Responsibility');
+    }
     return s.title.contains('Customized');
+  }
+
+  void _enquire(BuildContext context, String service) {
+    Navigator.pushNamed(context, '/contact', arguments: {
+      'type': 'Corporate Training',
+      'topic': service,
+    });
   }
 
   @override
@@ -78,11 +101,35 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 ),
               ),
               const SizedBox(height: 26),
-              for (final s in Content.services.where(_matches))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _ServiceRow(service: s),
-                ),
+              Builder(builder: (context) {
+                final results =
+                    Content.services.where(_matches).toList();
+                if (results.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No services in this group',
+                    message:
+                        'Try another filter to browse the full service directory.',
+                    action: GhostButton(
+                      label: 'Show all services',
+                      compact: true,
+                      onPressed: () => setState(() => _filter = 0),
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final s in results)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _ServiceRow(
+                            service: s,
+                            onEnquire: () =>
+                                _enquire(context, s.title)),
+                      ),
+                  ],
+                );
+              }),
             ],
           ),
         ),
@@ -140,7 +187,11 @@ class _Head extends StatelessWidget {
             PrimaryButton(
               label: 'Get a Free Consultation',
               icon: Icons.event_available_rounded,
-              onPressed: () => Navigator.pushNamed(context, '/contact'),
+              onPressed: () => Navigator.pushNamed(context, '/contact',
+                  arguments: const {
+                    'type': 'Corporate Training',
+                    'topic': 'Free consultation',
+                  }),
             ),
           ],
         ),
@@ -151,7 +202,8 @@ class _Head extends StatelessWidget {
 
 class _ServiceRow extends StatefulWidget {
   final ServiceItem service;
-  const _ServiceRow({required this.service});
+  final VoidCallback onEnquire;
+  const _ServiceRow({required this.service, required this.onEnquire});
 
   @override
   State<_ServiceRow> createState() => _ServiceRowState();
@@ -226,16 +278,12 @@ class _ServiceRowState extends State<_ServiceRow> {
                                           PrimaryButton(
                                             label: 'Enquiry',
                                             compact: true,
-                                            onPressed: () =>
-                                                Navigator.pushNamed(
-                                                    context, '/contact'),
+                                            onPressed: widget.onEnquire,
                                           ),
                                           GhostButton(
                                             label: 'Get a Free Consultation',
                                             compact: true,
-                                            onPressed: () =>
-                                                Navigator.pushNamed(
-                                                    context, '/contact'),
+                                            onPressed: widget.onEnquire,
                                           ),
                                         ],
                                       ),
@@ -271,29 +319,25 @@ class _Programmes extends StatelessWidget {
     (
       'Emotional Intelligence Essentials',
       'Public Programme',
-      'RM 450 / participant',
-      '2 days · In-person or virtual · Max 25 pax',
+      'In-person or virtual · cohort-based',
       'Foundational EQ for individual contributors and new managers.'
     ),
     (
       'Leadership Communication Lab',
       'Public Programme',
-      'RM 690 / participant',
-      '3 days · In-person · Max 20 pax',
+      'In-person · cohort-based',
       'Feedback, difficult conversations and executive presence.'
     ),
     (
       'Organization Well-being Sprint',
       'Corporate Programme',
-      'Request a Quote',
-      '8 weeks · On-site + digital · Any headcount',
+      'On-site + digital · scoped to your team',
       'Assessment, manager enablement and a 90-day action plan.'
     ),
     (
       'Team Effectiveness Offsite',
       'Corporate Programme',
-      'Request a Quote',
-      '1–2 days · On-site · Custom headcount',
+      'On-site · scoped to your team',
       'Diagnose dysfunction, rebuild trust and set accountability norms.'
     ),
   ];
@@ -310,93 +354,98 @@ class _Programmes extends StatelessWidget {
             eyebrow: 'Corporate programmes',
             title: 'Browse programmes',
             subtitle:
-                'Public programmes have fixed pricing. Corporate programmes are shaped around your team and quoted on request.',
+                'Every programme is scoped to your team and quoted on request — send an enquiry to start the conversation.',
           ),
           const SizedBox(height: 34),
           ResponsiveBuilder(
             builder: (context, type) {
-              final cross = type == ScreenType.mobile
+              final perRow = type == ScreenType.mobile
                   ? 1
                   : type == ScreenType.tablet
                       ? 2
                       : 2;
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 18,
-                crossAxisSpacing: 18,
-                childAspectRatio: 1.15,
-                children: [
-                  for (final p in programmes)
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Tag(
-                                label: p.$2,
-                                color: p.$2 == 'Public Programme'
-                                    ? AppColors.teal
-                                    : AppColors.purple,
-                              ),
-                              const Spacer(),
-                              Text(p.$4.split(' · ').first,
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.muted,
-                                      fontWeight: FontWeight.w600)),
-                            ],
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const gap = 18.0;
+                  final w = constraints.maxWidth;
+                  final itemW = perRow == 1
+                      ? w
+                      : (w - gap * (perRow - 1)) / perRow;
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: gap,
+                    children: [
+                      for (final p in programmes)
+                        SizedBox(
+                          width: itemW,
+                          child: Container(
+                            padding: const EdgeInsets.all(22),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(18),
+                              border:
+                                  Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Tag(
+                                      label: p.$2,
+                                      color: p.$2 == 'Public Programme'
+                                          ? AppColors.teal
+                                          : AppColors.purple,
+                                    ),
+                                    const Spacer(),
+                                    Text('Enquire for pricing',
+                                        style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.muted,
+                                            fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                Text(p.$1,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 18,
+                                        height: 1.3,
+                                        color: AppColors.ink)),
+                                const SizedBox(height: 8),
+                                Text(p.$4,
+                                    style: const TextStyle(
+                                        fontSize: 14, height: 1.55)),
+                                const SizedBox(height: 12),
+                                Text(p.$3,
+                                    style: const TextStyle(
+                                        fontSize: 12.5,
+                                        color: AppColors.muted,
+                                        fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 14),
+                                PrimaryButton(
+                                  label: 'Enquire',
+                                  compact: true,
+                                  onPressed: () =>
+                                      Navigator.pushNamed(
+                                          context, '/contact',
+                                          arguments: {
+                                        'type': p.$2 ==
+                                                'Public Programme'
+                                            ? 'Individual Coaching'
+                                            : 'Corporate Training',
+                                        'topic': p.$1,
+                                      }),
+                                ),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 14),
-                          Text(p.$1,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 18,
-                                  height: 1.3,
-                                  color: AppColors.ink)),
-                          const SizedBox(height: 8),
-                          Text(p.$5,
-                              style: const TextStyle(
-                                  fontSize: 14, height: 1.55)),
-                          const Spacer(),
-                          Text(p.$4,
-                              style: const TextStyle(
-                                  fontSize: 12.5,
-                                  color: AppColors.muted,
-                                  fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Text(
-                                p.$3,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                    color: AppColors.deepBlue),
-                              ),
-                              const Spacer(),
-                              PrimaryButton(
-                                label: p.$2 == 'Public Programme'
-                                    ? 'Enrol'
-                                    : 'Request Quote',
-                                compact: true,
-                                onPressed: () => Navigator.pushNamed(
-                                    context, '/contact'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                        ),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -471,7 +520,11 @@ class _Coaching extends StatelessWidget {
               PrimaryButton(
                 label: 'Book a Coaching Session',
                 icon: Icons.calendar_month_rounded,
-                onPressed: () => Navigator.pushNamed(context, '/contact'),
+                onPressed: () => Navigator.pushNamed(context, '/contact',
+                    arguments: const {
+                      'type': 'Individual Coaching',
+                      'topic': 'One-to-one coaching',
+                    }),
               ),
             ],
           );
@@ -493,27 +546,40 @@ class _Coaching extends StatelessWidget {
                 for (final f in focus)
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.border),
                     ),
-                    child: Row(
-                      children: [
-                        Icon(f.$2, color: AppColors.purple, size: 22),
-                        const SizedBox(width: 14),
-                        Text(f.$1,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700, fontSize: 14.5)),
-                        const Spacer(),
-                        const Icon(Icons.arrow_forward_ios_rounded,
-                            size: 13, color: AppColors.muted),
-                      ],
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => Navigator.pushNamed(context, '/contact',
+                          arguments: {
+                            'type': 'Individual Coaching',
+                            'topic': 'Coaching focus: ${f.$1}',
+                          }),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Row(
+                          children: [
+                            Icon(f.$2, color: AppColors.purple, size: 22),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Text(f.$1,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14.5)),
+                            ),
+                            const Icon(Icons.arrow_forward_ios_rounded,
+                                size: 13, color: AppColors.muted),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 6),
-                const Text('FAQs and testimonials available on request.',
+                const Text(
+                    'Coaching slots are limited each month — enquire early to reserve a discovery call.',
                     style: TextStyle(fontSize: 13)),
               ],
             ),

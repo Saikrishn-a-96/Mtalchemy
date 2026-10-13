@@ -22,9 +22,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Product p = widget.product is Product
-        ? widget.product as Product
-        : Content.products.first;
+    if (widget.product is! Product) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 70),
+        child: EmptyState(
+          icon: Icons.inventory_2_outlined,
+          title: 'Product not found',
+          message:
+              'This product link is invalid. Browse the store to find what you need.',
+          action: PrimaryButton(
+            label: 'Back to store',
+            onPressed: () => Navigator.pushNamed(context, '/store'),
+          ),
+        ),
+      );
+    }
+    final Product p = widget.product as Product;
     final state = AppState.instance;
 
     return Column(
@@ -36,32 +49,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             builder: (context, type) {
               final gallery = Column(
                 children: [
-                  NetworkImg(
-                    url: p.image,
-                    width: double.infinity,
-                    height: 380,
-                    radius: BorderRadius.circular(22),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      for (final img in [
-                        p.image,
-                        Media.workspace,
-                        Media.booksStack,
-                        Media.notebook,
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.only(right: 10),
-                          child: NetworkImg(
-                            url: img,
-                            width: 76,
-                            height: 76,
-                            radius: BorderRadius.circular(14),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                    ],
+                  AspectRatio(
+                    aspectRatio: 4 / 3,
+                    child: NetworkImg(
+                      url: p.image,
+                      width: double.infinity,
+                      radius: BorderRadius.circular(22),
+                    ),
                   ),
                 ],
               );
@@ -90,12 +84,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const RatingStar(rating: 4.8),
+                      RatingStar(rating: p.rating),
                       const SizedBox(width: 12),
-                      Text('126 reviews',
+                      Text('${p.reviews} reviews',
                           style: TextStyle(
                               fontSize: 13.5,
                               color: AppColors.muted.withValues(alpha: 1))),
+                      const SizedBox(width: 8),
+                      const Tag(label: 'SAMPLE', color: AppColors.warning),
                     ],
                   ),
                   const SizedBox(height: 18),
@@ -115,7 +111,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: Text(
                           p.isDigital
                               ? 'Instant download'
-                              : 'Stock: ${p.stock} units',
+                              : 'Stock: ${state.effectiveStock(p)} units',
                           style: const TextStyle(
                               fontSize: 13.5, color: AppColors.muted),
                         ),
@@ -149,44 +145,65 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         _QtyBtn(
                           icon: Icons.add_rounded,
-                          onTap: () => setState(() => _qty++),
+                          onTap: () {
+                            final max = state.effectiveStock(p);
+                            if (_qty >= max) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Only $max unit(s) in stock')),
+                              );
+                              return;
+                            }
+                            setState(() => _qty++);
+                          },
                         ),
                       ],
                     ),
                     const SizedBox(height: 22),
                   ],
-                  Row(
-                    children: [
-                      Expanded(
-                        child: PrimaryButton(
-                          label: 'Add to Cart',
-                          icon: Icons.shopping_bag_rounded,
-                          wide: true,
-                          onPressed: () {
-                            state.addToCart(p, qty: _qty);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${p.name} added to cart'),
-                                action: SnackBarAction(
-                                  label: 'View cart',
-                                  textColor: AppColors.softYellow,
-                                  onPressed: () =>
-                                      Navigator.pushNamed(context, '/cart'),
-                                ),
+                  ResponsiveBuilder(
+                    builder: (context, type) {
+                      final add = PrimaryButton(
+                        label: 'Add to Cart',
+                        icon: Icons.shopping_bag_rounded,
+                        wide: true,
+                        onPressed: () {
+                          state.addToCart(p, qty: _qty);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('${p.name} added to cart'),
+                              action: SnackBarAction(
+                                label: 'View cart',
+                                textColor: AppColors.softYellow,
+                                onPressed: () =>
+                                    Navigator.pushNamed(context, '/cart'),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GhostButton(
+                            ),
+                          );
+                        },
+                      );
+                      final buy = GhostButton(
                         label: 'Buy now',
                         onPressed: () {
                           state.addToCart(p, qty: _qty);
                           Navigator.pushNamed(context, '/checkout');
                         },
-                      ),
-                    ],
+                      );
+                      if (type == ScreenType.mobile) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [add, const SizedBox(height: 12), buy],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: add),
+                          const SizedBox(width: 12),
+                          buy,
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 22),
                   Container(
@@ -242,25 +259,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (var i = 0; i < 3; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(const [
-                          'Description',
-                          'What’s included',
-                          'Shipping & returns'
-                        ][i]),
-                        selected: _tab == i,
-                        selectedColor: AppColors.deepBlue,
-                        labelStyle: TextStyle(
-                          color: _tab == i ? Colors.white : AppColors.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        onSelected: (_) => setState(() => _tab = i),
+                    ChoiceChip(
+                      label: Text(const [
+                        'Description',
+                        'What’s included',
+                        'Shipping & returns'
+                      ][i]),
+                      selected: _tab == i,
+                      selectedColor: AppColors.deepBlue,
+                      labelStyle: TextStyle(
+                        color: _tab == i ? Colors.white : AppColors.ink,
+                        fontWeight: FontWeight.w700,
                       ),
+                      onSelected: (_) => setState(() => _tab = i),
                     ),
                 ],
               ),
@@ -272,11 +288,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ? '${p.blurb} Designed with MT Alchemy’s human-centred approach — short sections, reflection prompts and practical exercises you can apply the same week.'
                       : _tab == 1
                           ? (p.isDigital
-                              ? 'Main workbook (PDF, 62 pages) · Printable reflection sheets · Bonus tracker template · Lifetime access from your library.'
-                              : 'Printed workbook · Reflection card deck · Progress tracker · Gift-ready packaging with a facilitator note.')
+                              ? 'Main file (PDF) · Printable reflection sheets · Lifetime access from your digital library.'
+                              : 'Printed edition · Reflection cards where included · Progress tracker · Packed for gifting on request.')
                           : (p.isDigital
-                              ? 'No shipping required. Digital files are delivered instantly after payment and remain available in My Digital Products.'
-                              : 'Shipping RM15 flat rate within Malaysia. Free shipping above RM200. Returns accepted within 14 days if unopened.'),
+                              ? 'No shipping required. Digital files unlock in My Digital Products right after payment.'
+                              : 'Shipping RM15 flat within Malaysia; tracking is emailed after dispatch. Contact us within 14 days for order issues.'),
                   style: const TextStyle(height: 1.75, fontSize: 15.5),
                 ),
               ),
@@ -296,20 +312,31 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               const SizedBox(height: 30),
               ResponsiveBuilder(
                 builder: (context, type) {
-                  final w = MediaQuery.sizeOf(context).width;
-                  final cross = w < 700 ? 1 : w < 1080 ? 2 : 4;
-                  return GridView.count(
-                    crossAxisCount: cross,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.74,
-                    children: [
-                      for (final other
-                          in Content.products.where((x) => x.id != p.id).take(cross))
-                        ProductCard(product: other),
-                    ],
+                  final perRow = type == ScreenType.mobile
+                      ? 1
+                      : type == ScreenType.tablet
+                          ? 2
+                          : 4;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      const gap = 20.0;
+                      final w = constraints.maxWidth;
+                      final itemW = perRow == 1
+                          ? w
+                          : (w - gap * (perRow - 1)) / perRow;
+                      return Wrap(
+                        spacing: gap,
+                        runSpacing: gap,
+                        children: [
+                          for (final other in Content.products
+                              .where((x) => x.id != p.id)
+                              .take(4))
+                            SizedBox(
+                                width: itemW,
+                                child: ProductCard(product: other)),
+                        ],
+                      );
+                    },
                   );
                 },
               ),

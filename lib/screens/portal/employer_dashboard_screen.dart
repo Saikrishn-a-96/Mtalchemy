@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../data/brand_data.dart';
+import '../../data/reporting.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
@@ -25,10 +25,11 @@ class EmployerDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppState.instance;
+    final stats = Reporting.reportStats(state.roster);
 
     return PortalShell(
       title: 'Employer / Corporate Dashboard',
-      subtitle: 'Organization: ABC Sdn Bhd · FY2026 learning programme',
+      subtitle: 'Organization: ABC Sdn Bhd (sample) · FY2026 learning programme',
       activeRoute: '/employer',
       items: items,
       child: Column(
@@ -38,32 +39,32 @@ class EmployerDashboardScreen extends StatelessWidget {
             builder: (context, type) {
               final tiles = [
                 StatTile(
-                    value: '${state.myEmployees.length}',
+                    value: '${state.roster.length}',
                     label: 'Total employees',
                     icon: Icons.groups_rounded,
                     accent: AppColors.deepBlue),
                 StatTile(
-                    value: '3',
+                    value: '${state.roster.where((e) => e.progress > 0 && e.progress < 100).length}',
                     label: 'Active learners',
                     icon: Icons.school_rounded,
                     accent: AppColors.purple),
                 StatTile(
-                    value: '4',
+                    value: '${state.roster.map((e) => e.course).toSet().length}',
                     label: 'Courses assigned',
                     icon: Icons.assignment_rounded,
                     accent: AppColors.indigo),
                 StatTile(
-                    value: '62%',
+                    value: '${stats.completionRate}%',
                     label: 'Completion rate',
                     icon: Icons.trending_up_rounded,
                     accent: AppColors.success),
                 StatTile(
-                    value: '2',
+                    value: '${stats.completions}',
                     label: 'Certificates earned',
                     icon: Icons.workspace_premium_rounded,
                     accent: AppColors.softYellow),
                 StatTile(
-                    value: '48h',
+                    value: '${stats.learningHours}h',
                     label: 'Learning hours',
                     icon: Icons.schedule_rounded,
                     accent: AppColors.teal),
@@ -106,12 +107,8 @@ class EmployerDashboardScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    for (final d in const [
-                      ('Human Resources', 0.9, '90%'),
-                      ('Finance', 1.0, '100%'),
-                      ('Operations', 0.45, '45%'),
-                      ('Sales', 0.1, '10%'),
-                    ])
+                    for (final d in Reporting.departmentPerformance(
+                        state.roster))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 18),
                         child: Column(
@@ -119,12 +116,12 @@ class EmployerDashboardScreen extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Text(d.$1,
+                                Text(d.department,
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14)),
                                 const Spacer(),
-                                Text(d.$3,
+                                Text('${d.averageProgress}%',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 13.5,
@@ -133,7 +130,9 @@ class EmployerDashboardScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: d.$2),
+                              tween: Tween(
+                                  begin: 0,
+                                  end: d.averageProgress / 100),
                               duration: 900.ms,
                               curve: Curves.easeOutCubic,
                               builder: (context, v, _) =>
@@ -188,12 +187,19 @@ class EmployerDashboardScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Panel(
                     title: 'Pending assignments',
+                    trailing: TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                          context, '/employer/assign'),
+                      child: const Text('New'),
+                    ),
                     child: Column(
                       children: [
-                        for (final a in const [
-                          ('Workplace Well-being Practitioner', 'Due 30 Oct 2026', '2 pending'),
-                          ('Communicate with Impact', 'Due 05 Nov 2026', '1 pending'),
-                        ])
+                        if (state.assignments.isEmpty)
+                          const Text(
+                            'No pending assignments. Assign a course to get started.',
+                            style: TextStyle(height: 1.6, fontSize: 13.5),
+                          ),
+                        for (final a in state.assignments)
                           Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(14),
@@ -205,20 +211,21 @@ class EmployerDashboardScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(a.$1,
+                                Text('${a['course']}',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w700,
                                         fontSize: 14)),
                                 const SizedBox(height: 6),
                                 Row(
                                   children: [
-                                    Text(a.$2,
+                                    Text('Due ${a['deadline']}',
                                         style: const TextStyle(
                                             fontSize: 12.5,
                                             color: AppColors.muted)),
                                     const Spacer(),
                                     Tag(
-                                        label: a.$3,
+                                        label:
+                                            '${a['count']} pending',
                                         color: AppColors.warning),
                                   ],
                                 ),
@@ -268,7 +275,7 @@ class EmployerDashboardScreen extends StatelessWidget {
                   DataColumn(label: Text('Status')),
                 ],
                 rows: [
-                  for (final e in Content.employees)
+                  for (final e in state.roster)
                     DataRow(cells: [
                       DataCell(Text(e.name,
                           style:

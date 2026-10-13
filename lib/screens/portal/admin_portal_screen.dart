@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/brand_data.dart';
+import '../../data/reporting.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/common.dart';
@@ -100,49 +101,73 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
     switch (_section) {
       case 0:
         return _dashboard();
+      case 1:
+        return _users();
+      case 2:
+        return _organizations();
       case 3:
         return _courseManagement();
+      case 4:
+        return _modules();
+      case 5:
+        return _assessments();
+      case 6:
+        return _certificates();
       case 7:
         return _productManagement();
       case 8:
         return _orderManagement();
-      case 1:
-        return _users();
+      case 9:
+        return _payments();
+      case 10:
+        return _inventory();
+      case 11:
+        return _contentList();
+      case 12:
+        return _testimonials();
+      case 13:
+        return _impactStories();
+      case 14:
+        return _reportsSection();
       default:
-        return _generic(_sections[_section].$1);
+        return _settings();
     }
   }
 
   Widget _dashboard() {
+    final state = AppState.instance;
+    final published =
+        Content.courses.where((c) => state.coursePublishStatus(c.id) == 'Published').length;
+    final revenue = Reporting.orderRevenue(state.orders);
     final tiles = [
       StatTile(
-          value: '1,240',
-          label: 'Registered users',
+          value: '${state.roster.length}',
+          label: 'Learners on roster',
           icon: Icons.manage_accounts_rounded,
           accent: AppColors.deepBlue),
       StatTile(
-          value: '18',
+          value: '$published/${Content.courses.length}',
           label: 'Published courses',
           icon: Icons.menu_book_rounded,
           accent: AppColors.purple),
       StatTile(
-          value: '8',
+          value: '${Content.products.length}',
           label: 'Products',
           icon: Icons.inventory_2_rounded,
           accent: AppColors.indigo),
       StatTile(
-          value: 'RM 12,480',
-          label: 'Revenue (30 days)',
+          value: 'RM${revenue.toStringAsFixed(0)}',
+          label: 'Order revenue (sample)',
           icon: Icons.payments_rounded,
           accent: AppColors.success),
       StatTile(
-          value: '26',
-          label: 'Open orders',
+          value: '${state.orders.length}',
+          label: 'Orders',
           icon: Icons.receipt_long_rounded,
           accent: AppColors.warning),
       StatTile(
-          value: '5',
-          label: 'Pending enquiries',
+          value: '${state.enquiries.length}',
+          label: 'Enquiries received',
           icon: Icons.forum_rounded,
           accent: AppColors.teal),
     ];
@@ -184,37 +209,37 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
             final workflow = Panel(
               title: 'Key admin workflows',
               child: Column(
-                children: const [
+                children: [
                   _Flow(
                       label: 'Course management',
-                      steps: 'Draft → Published → Archived',
-                      icon: Icons.menu_book_rounded),
+                      steps: 'Published ↔ Draft · preview each course',
+                      icon: Icons.menu_book_rounded,
+                      onTap: () => setState(() => _section = 3)),
                   _Flow(
                       label: 'Product management',
-                      steps: 'Add → Price → Stock → Publish',
-                      icon: Icons.inventory_2_rounded),
+                      steps: 'Adjust stock from this portal',
+                      icon: Icons.inventory_2_rounded,
+                      onTap: () => setState(() => _section = 7)),
                   _Flow(
                       label: 'Order management',
-                      steps: 'Pending → Paid → Processing → Shipped → Delivered',
-                      icon: Icons.receipt_long_rounded),
+                      steps: 'Advance Paid → Shipped → Delivered',
+                      icon: Icons.receipt_long_rounded,
+                      onTap: () => setState(() => _section = 8)),
                   _Flow(
                       label: 'Digital order',
-                      steps: 'Pending → Paid → Available',
-                      icon: Icons.download_rounded),
+                      steps: 'Paid → Available in the library',
+                      icon: Icons.download_rounded,
+                      onTap: () => setState(() => _section = 8)),
                 ],
               ),
             );
             final activity = Panel(
               title: 'Recent activity',
+              trailing:
+                  const Tag(label: 'SAMPLE', color: AppColors.warning),
               child: Column(
                 children: [
-                  for (final a in const [
-                    ('Course published', 'Lead with Clarity · 2h ago', AppColors.success),
-                    ('New order #MA1002', 'Team Reflection Cards · 5h ago', AppColors.indigo),
-                    ('User registered', 'priya@abcsdn.my · 1d ago', AppColors.purple),
-                    ('Enquiry received', 'Corporate Training · 1d ago', AppColors.warning),
-                    ('Certificate issued', 'MT-ALC-2026-0147 · 2d ago', AppColors.teal),
-                  ])
+                  for (final a in _recentActivity())
                     Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       padding: const EdgeInsets.all(13),
@@ -274,16 +299,45 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
     );
   }
 
+  /// Activity feed derived from live prototype state (orders,
+  /// enquiries, assignments, roster) — sample data, newest first.
+  List<(String, String, Color)> _recentActivity() {
+    final state = AppState.instance;
+    final items = <(String, String, Color)>[];
+    for (final o in state.orders.take(2)) {
+      items.add((
+        'Order ${o['id']} · ${o['status']}',
+        '${o['items']} · ${o['date']}',
+        AppColors.indigo
+      ));
+    }
+    for (final e in state.enquiries.take(2)) {
+      items.add((
+        'Enquiry · ${e['type']}',
+        '${e['name']} · ${e['date']}',
+        AppColors.warning
+      ));
+    }
+    for (final a in state.assignments.take(1)) {
+      items.add((
+        'Course assigned',
+        '${a['course']} · due ${a['deadline']}',
+        AppColors.success
+      ));
+    }
+    items.add((
+      'Roster update',
+      '${state.roster.length} learners · ${state.roster.where((e) => e.progress >= 100).length} completed',
+      AppColors.teal
+    ));
+    return items;
+  }
+
   Widget _courseManagement() {
+    final state = AppState.instance;
     return Panel(
       title: 'Course management',
-      trailing: PrimaryButton(
-        label: 'Create course',
-        icon: Icons.add_rounded,
-        compact: true,
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Course editor opens here (Checkpoint 2)'))),
-      ),
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
@@ -297,12 +351,12 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
             DataColumn(label: Text('Actions')),
           ],
           rows: [
-            for (var i = 0; i < Content.courses.length; i++)
+            for (final c in Content.courses)
               DataRow(cells: [
                 DataCell(Row(
                   children: [
                     NetworkImg(
-                      url: Content.courses[i].image,
+                      url: c.image,
                       width: 42,
                       height: 42,
                       radius: BorderRadius.circular(8),
@@ -310,39 +364,36 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
                     const SizedBox(width: 10),
                     SizedBox(
                         width: 260,
-                        child: Text(Content.courses[i].title,
+                        child: Text(c.title,
                             maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600))),
                   ],
                 )),
-                DataCell(Text(Content.courses[i].category)),
-                DataCell(Text(Content.courses[i].instructor)),
-                DataCell(Text('${Content.courses[i].modules}')),
-                DataCell(Text('RM${Content.courses[i].price}')),
+                DataCell(Text(c.category)),
+                DataCell(Text(c.instructor)),
+                DataCell(Text('${c.modules}')),
+                DataCell(Text('RM${c.price}')),
                 DataCell(Tag(
-                  label: i % 5 == 4 ? 'Draft' : i % 7 == 6 ? 'Archived' : 'Published',
-                  color: i % 5 == 4
-                      ? AppColors.warning
-                      : i % 7 == 6
-                          ? AppColors.muted
-                          : AppColors.success,
+                  label: state.coursePublishStatus(c.id),
+                  color: state.coursePublishStatus(c.id) == 'Published'
+                      ? AppColors.success
+                      : AppColors.warning,
                 )),
                 DataCell(Row(
                   children: [
                     IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        tooltip: 'Edit'),
-                    IconButton(
-                        onPressed: () {},
+                        onPressed: () => Navigator.pushNamed(
+                            context, '/course',
+                            arguments: c),
                         icon: const Icon(Icons.visibility_outlined, size: 18),
-                        tooltip: 'Preview'),
+                        tooltip: 'Preview public page'),
                     IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.delete_outline_rounded,
-                            size: 18, color: AppColors.danger),
-                        tooltip: 'Delete'),
+                        onPressed: () => state.toggleCourseStatus(c.id),
+                        icon: const Icon(Icons.published_with_changes_rounded,
+                            size: 18),
+                        tooltip: 'Toggle Published / Draft'),
                   ],
                 )),
               ]),
@@ -353,15 +404,10 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
   }
 
   Widget _productManagement() {
+    final state = AppState.instance;
     return Panel(
       title: 'Product management',
-      trailing: PrimaryButton(
-        label: 'Add product',
-        icon: Icons.add_rounded,
-        compact: true,
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Product editor opens here (Checkpoint 2)'))),
-      ),
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
       child: ResponsiveBuilder(
         builder: (context, type) {
           final cards = [
@@ -407,13 +453,35 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
                     Row(
                       children: [
                         Text(
-                          p.isDigital ? 'Stock: —' : 'Stock: ${p.stock}',
+                          p.isDigital
+                              ? 'Stock: digital (unlimited)'
+                              : 'Stock: ${state.effectiveStock(p)}',
                           style: const TextStyle(
                               fontSize: 12.5, color: AppColors.muted),
                         ),
                         const Spacer(),
-                        const Icon(Icons.toggle_on_rounded,
-                            color: AppColors.success, size: 28),
+                        if (!p.isDigital) ...[
+                          InkWell(
+                            onTap: () => state.adjustStock(p, -1),
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.remove_circle_outline_rounded,
+                                  size: 22, color: AppColors.indigo),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => state.adjustStock(p, 1),
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(Icons.add_circle_outline_rounded,
+                                  size: 22, color: AppColors.indigo),
+                            ),
+                          ),
+                        ] else
+                          const Icon(Icons.all_inclusive_rounded,
+                              color: AppColors.success, size: 24),
                       ],
                     ),
                   ],
@@ -452,9 +520,12 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
   }
 
   Widget _orderManagement() {
-    final orders = AppState.instance.orders;
+    final state = AppState.instance;
+    final orders = state.orders;
     return Panel(
       title: 'Order management',
+      trailing: Tag(
+          label: '${orders.length} orders', color: AppColors.indigo),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -467,34 +538,48 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
                 DataColumn(label: Text('Products')),
                 DataColumn(label: Text('Amount')),
                 DataColumn(label: Text('Payment')),
-                DataColumn(label: Text('Order status')),
-                DataColumn(label: Text('Shipping')),
+                DataColumn(label: Text('Fulfilment')),
+                DataColumn(label: Text('Advance')),
               ],
               rows: [
-                for (var i = 0; i < orders.length; i++)
+                for (final o in orders)
                   DataRow(cells: [
-                    DataCell(Text('${orders[i]['id']}',
+                    DataCell(Text('${o['id']}',
                         style: const TextStyle(fontWeight: FontWeight.w700))),
-                    DataCell(Text(i.isEven ? 'Aisyah Rahman' : 'Daniel Wong')),
+                    DataCell(Text('${o['customer'] ?? '—'}')),
                     DataCell(SizedBox(
                         width: 300,
-                        child:
-                            Text('${orders[i]['items']}', maxLines: 1))),
-                    DataCell(Text('${orders[i]['amount']}')),
+                        child: Text('${o['items']}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis))),
+                    DataCell(Text('${o['amount']}')),
+                    DataCell(const Tag(
+                        label: 'Paid', color: AppColors.success)),
                     DataCell(Tag(
-                        label: '${orders[i]['status']}',
-                        color: AppColors.success)),
-                    DataCell(Tag(
-                      label: i.isEven ? 'Processing' : 'Shipped',
-                      color: i.isEven
-                          ? AppColors.warning
-                          : AppColors.indigo,
+                      label: '${o['status']}',
+                      color: '${o['status']}' == 'Delivered' ||
+                              '${o['status']}' == 'Available'
+                          ? AppColors.teal
+                          : AppColors.warning,
                     )),
-                    DataCell(Tag(
-                        label: i.isEven ? 'Pending' : 'Delivered',
-                        color: i.isEven
-                            ? AppColors.muted
-                            : AppColors.teal)),
+                    DataCell(
+                      Builder(builder: (context) {
+                        final done = '${o['status']}' == 'Delivered' ||
+                            '${o['status']}' == 'Available';
+                        return TextButton(
+                          onPressed: done
+                              ? null
+                              : () {
+                                  state.advanceOrderStatus(o);
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                          content: Text(
+                                              '${o['id']} → ${o['status']}')));
+                                },
+                          child: Text(done ? 'Done' : 'Advance'),
+                        );
+                      }),
+                    ),
                   ]),
               ],
             ),
@@ -508,7 +593,7 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
               border: Border.all(color: AppColors.border),
             ),
             child: const Text(
-              'State machine — Physical: Pending → Paid → Processing → Shipped → Delivered. Digital: Pending → Paid → Available.',
+              'State machine — physical goods: Paid → Shipped → Delivered. Digital goods: Paid → Available in the library.',
               style: TextStyle(fontSize: 13.5, height: 1.6),
             ),
           ),
@@ -518,9 +603,12 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
   }
 
   Widget _users() {
+    final roster = AppState.instance.roster;
     return Panel(
       title: 'User management',
-      trailing: const Tag(label: '1,240 users', color: AppColors.indigo),
+      trailing: Tag(
+          label: '${roster.length} users (sample)',
+          color: AppColors.indigo),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
@@ -529,38 +617,33 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
             DataColumn(label: Text('Email')),
             DataColumn(label: Text('Role')),
             DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Joined')),
+            DataColumn(label: Text('Progress')),
           ],
           rows: [
-            for (final u in const [
-              ('Aisyah Rahman', 'aisyah@abcsdn.my', 'Individual', 'Active', '10 Sep 2026'),
-              ('Daniel Wong', 'daniel@abcsdn.my', 'Individual', 'Active', '02 Sep 2026'),
-              ('Priya Nair', 'priya@abcsdn.my', 'Employer', 'Active', '28 Aug 2026'),
-              ('Mabel Tan KH', 'mabel@mtalchemy.my', 'Administrator', 'Active', '01 Aug 2026'),
-              ('Esther Ng', 'esther@mtalchemy.my', 'Trainer', 'Active', '01 Aug 2026'),
-              ('Jason Lee', 'jason@abcsdn.my', 'Individual', 'Invited', '11 Oct 2026'),
-            ])
+            for (final u in roster)
               DataRow(cells: [
-                DataCell(Text(u.$1,
+                DataCell(Text(u.name,
                     style: const TextStyle(fontWeight: FontWeight.w600))),
-                DataCell(Text(u.$2)),
+                DataCell(Text(u.email.isEmpty ? '—' : u.email)),
                 DataCell(Tag(
-                  label: u.$3,
-                  color: u.$3 == 'Administrator'
+                  label: u.role,
+                  color: u.role == 'Administrator'
                       ? AppColors.deepBlue
-                      : u.$3 == 'Trainer'
+                      : u.role == 'Trainer'
                           ? AppColors.purple
-                          : u.$3 == 'Employer'
+                          : u.role == 'Department Lead'
                               ? AppColors.indigo
                               : AppColors.teal,
                 )),
                 DataCell(Tag(
-                  label: u.$4,
-                  color: u.$4 == 'Active'
+                  label: u.status,
+                  color: u.status == 'Completed'
                       ? AppColors.success
-                      : AppColors.warning,
+                      : u.status == 'Invited' || u.status == 'Not Started'
+                          ? AppColors.muted
+                          : AppColors.indigo,
                 )),
-                DataCell(Text(u.$5)),
+                DataCell(Text('${u.progress}%')),
               ]),
           ],
         ),
@@ -568,23 +651,528 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> {
     );
   }
 
-  Widget _generic(String title) {
+  Widget _organizations() {
+    final state = AppState.instance;
     return Panel(
-      title: title,
+      title: 'Organizations',
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
       child: Column(
         children: [
-          EmptyState(
-            icon: Icons.construction_rounded,
-            title: '$title module',
-            message:
-                'This area is scoped for Checkpoint 2 (core build). The prototype demonstrates the information architecture, navigation and the modules that carry the most workflow value.',
-            action: GhostButton(
-              label: 'Back to dashboard',
-              onPressed: () => setState(() => _section = 0),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.corporate_fare_rounded,
+                    size: 34, color: AppColors.deepBlue),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ABC Sdn Bhd',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 17)),
+                      SizedBox(height: 4),
+                      Text(
+                        'Sample client organization · FY2026 learning programme · plan: Corporate',
+                        style: TextStyle(
+                            fontSize: 13, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                Tag(label: 'ACTIVE', color: AppColors.success),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                  child: StatTile(
+                      value: '${state.roster.length}',
+                      label: 'Learners',
+                      icon: Icons.groups_rounded,
+                      accent: AppColors.deepBlue)),
+              const SizedBox(width: 14),
+              Expanded(
+                  child: StatTile(
+                      value: '${state.assignments.length}',
+                      label: 'Assignments',
+                      icon: Icons.assignment_rounded,
+                      accent: AppColors.purple)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _modules() {
+    return Panel(
+      title: 'Modules',
+      trailing: Text(
+          '${Content.courses.fold(0, (s, c) => s + c.modules)} modules in catalogue',
+          style: const TextStyle(
+              color: AppColors.muted, fontWeight: FontWeight.w600)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Course')),
+            DataColumn(label: Text('Modules')),
+            DataColumn(label: Text('Lessons listed')),
+            DataColumn(label: Text('Duration')),
+          ],
+          rows: [
+            for (final c in Content.courses)
+              DataRow(cells: [
+                DataCell(SizedBox(
+                    width: 260,
+                    child: Text(c.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600)))),
+                DataCell(Text('${c.modules}')),
+                DataCell(Text('${c.curriculum.length}')),
+                DataCell(Text(c.duration)),
+              ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _assessments() {
+    return Panel(
+      title: 'Assessments',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.bg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.quiz_rounded,
+                    size: 30, color: AppColors.purple),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'End-of-course quiz · ${Content.quiz.length} questions · pass mark 4 of ${Content.quiz.length} (80%) · passing unlocks the certificate.',
+                    style: const TextStyle(height: 1.6, fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          PrimaryButton(
+            label: 'Preview quiz',
+            icon: Icons.play_arrow_rounded,
+            compact: true,
+            onPressed: () => Navigator.pushNamed(context, '/quiz'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _certificates() {
+    final state = AppState.instance;
+    final issued =
+        state.roster.where((e) => e.progress >= 100).toList();
+    return Panel(
+      title: 'Certificates',
+      trailing: Tag(
+          label: '${issued.length} issued', color: AppColors.success),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Issued when a learner completes all modules and passes the quiz (4 of 5). Verify any certificate by its QR ID on the certificate page.',
+            style: TextStyle(fontSize: 13.5, height: 1.6),
+          ),
+          const SizedBox(height: 14),
+          if (issued.isEmpty)
+            const Text('No certificates issued yet.',
+                style: TextStyle(color: AppColors.muted)),
+          for (final e in issued)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.workspace_premium_rounded,
+                      color: AppColors.softYellow),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('${e.name} — ${e.course}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 14)),
+                  ),
+                  Tag(
+                      label: 'Score ${e.score}%',
+                      color: AppColors.success),
+                ],
+              ),
+            ),
+          const SizedBox(height: 8),
+          GhostButton(
+            label: 'Open certificate page',
+            compact: true,
+            onPressed: () =>
+                Navigator.pushNamed(context, '/certificate'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _payments() {
+    final state = AppState.instance;
+    final revenue = Reporting.orderRevenue(state.orders);
+    return Panel(
+      title: 'Payments',
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Collected revenue: RM${revenue.toStringAsFixed(2)} across ${state.orders.length} order(s). Payments are simulated in this prototype — no gateway is connected.',
+            style: const TextStyle(height: 1.6, fontSize: 14),
+          ),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: const [
+                DataColumn(label: Text('Order')),
+                DataColumn(label: Text('Date')),
+                DataColumn(label: Text('Customer')),
+                DataColumn(label: Text('Amount')),
+                DataColumn(label: Text('Status')),
+              ],
+              rows: [
+                for (final o in state.orders)
+                  DataRow(cells: [
+                    DataCell(Text('${o['id']}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700))),
+                    DataCell(Text('${o['date']}')),
+                    DataCell(Text('${o['customer'] ?? '—'}')),
+                    DataCell(Text('${o['amount']}')),
+                    DataCell(Tag(
+                        label: '${o['status']}',
+                        color: AppColors.success)),
+                  ]),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _inventory() {
+    final low = Content.products.where((p) => !p.isDigital).toList();
+    return Panel(
+      title: 'Inventory',
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
+      child: Column(
+        children: [
+          for (final p in low)
+            Builder(builder: (context) {
+              final stock = AppState.instance.effectiveStock(p);
+              final isLow = stock <= 10;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.bg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    NetworkImg(
+                        url: p.image,
+                        width: 44,
+                        height: 44,
+                        radius: BorderRadius.circular(10)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(p.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14)),
+                          Text('SKU ${p.id.toUpperCase()} · ${p.category}',
+                              style: const TextStyle(
+                                  fontSize: 12.5,
+                                  color: AppColors.muted)),
+                        ],
+                      ),
+                    ),
+                    Tag(
+                        label: isLow
+                            ? 'LOW · $stock left'
+                            : '$stock in stock',
+                        color: isLow
+                            ? AppColors.danger
+                            : AppColors.success),
+                  ],
+                ),
+              );
+            }),
+          const Text(
+            'Digital goods are unlimited. Adjust physical stock from Product management.',
+            style: TextStyle(fontSize: 12.5, color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _contentList() {
+    return Panel(
+      title: 'Content library',
+      trailing: Text('${Content.insights.length} insights',
+          style: const TextStyle(
+              color: AppColors.muted, fontWeight: FontWeight.w600)),
+      child: Column(
+        children: [
+          for (final i in Content.insights)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(i.title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14)),
+                        const SizedBox(height: 4),
+                        Text('${i.category} · ${i.readTime}',
+                            style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.muted)),
+                      ],
+                    ),
+                  ),
+                  Tag(label: i.category, color: AppColors.indigo),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _testimonials() {
+    return Panel(
+      title: 'Testimonials',
+      trailing: const Tag(label: 'SAMPLE', color: AppColors.warning),
+      child: Column(
+        children: [
+          for (final t in Content.testimonials)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('“${t['quote']}”',
+                      style: const TextStyle(
+                          height: 1.6, fontSize: 13.5)),
+                  const SizedBox(height: 8),
+                  Text('${t['name']} · ${t['org']}',
+                      style: const TextStyle(
+                          fontSize: 12.5, color: AppColors.muted)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _impactStories() {
+    final total = Content.stories
+        .fold(0, (sum, s) => sum + s.participants);
+    return Panel(
+      title: 'Impact stories',
+      trailing: Tag(
+          label: '$total participants', color: AppColors.success),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Programme')),
+            DataColumn(label: Text('Audience')),
+            DataColumn(label: Text('Participants')),
+            DataColumn(label: Text('Outcome')),
+          ],
+          rows: [
+            for (final s in Content.stories)
+              DataRow(cells: [
+                DataCell(SizedBox(
+                    width: 220,
+                    child: Text(s.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600)))),
+                DataCell(Text(s.clientType)),
+                DataCell(Text('${s.participants}')),
+                DataCell(SizedBox(
+                    width: 320,
+                    child: Text(s.outcome,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis))),
+              ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _reportsSection() {
+    final state = AppState.instance;
+    final stats = Reporting.reportStats(state.roster);
+    return Panel(
+      title: 'Reports',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${stats.enrolments} enrolments · ${stats.completions} completions (${stats.completionRate}%) · average score ${stats.averageScore}% · ${stats.learningHours}h assigned.',
+            style: const TextStyle(height: 1.7, fontSize: 14),
+          ),
+          const SizedBox(height: 14),
+          PrimaryButton(
+            label: 'Open learning reports',
+            icon: Icons.insights_rounded,
+            compact: true,
+            onPressed: () =>
+                Navigator.pushNamed(context, '/employer/reports'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _settings() {
+    final state = AppState.instance;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Panel(
+          title: 'Session',
+          child: Row(
+            children: [
+              const Icon(Icons.admin_panel_settings_rounded,
+                  color: AppColors.deepBlue, size: 30),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(state.userName ?? 'Guest visitor',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 15)),
+                    Text(state.userRole,
+                        style: const TextStyle(
+                            color: AppColors.muted, fontSize: 13)),
+                  ],
+                ),
+              ),
+              GhostButton(
+                label: 'Sign out',
+                compact: true,
+                onPressed: () {
+                  state.signOut();
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/login', (r) => false);
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Panel(
+          title: 'Notifications (prototype)',
+          child: Column(
+            children: [
+              for (final key in state.adminSwitches.keys)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(key, style: const TextStyle(fontSize: 14)),
+                  value: state.adminSwitches[key] ?? false,
+                  onChanged: (v) {
+                    state.setAdminSwitch(key, v);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              '$key ${v ? 'enabled' : 'disabled'}')),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        Panel(
+          title: 'Prototype data',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${Content.courses.length} courses · ${Content.products.length} products · ${state.roster.length} learners · ${state.orders.length} orders · ${state.enquiries.length} enquiries. All figures on this portal are computed from this sample dataset.',
+                style: const TextStyle(height: 1.7, fontSize: 13.5),
+              ),
+              const SizedBox(height: 14),
+              GhostButton(
+                label: 'Back to website',
+                compact: true,
+                onPressed: () => Navigator.pushNamedAndRemoveUntil(
+                    context, '/', (r) => false),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -593,39 +1181,47 @@ class _Flow extends StatelessWidget {
   final String label;
   final String steps;
   final IconData icon;
+  final VoidCallback? onTap;
   const _Flow(
-      {required this.label, required this.steps, required this.icon});
+      {required this.label,
+      required this.steps,
+      required this.icon,
+      this.onTap});
 
   @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: AppColors.bg,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppColors.indigo),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 14)),
-                  const SizedBox(height: 3),
-                  Text(steps,
-                      style: const TextStyle(
-                          fontSize: 12.5, color: AppColors.muted)),
-                ],
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: AppColors.bg,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.indigo),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14)),
+                    const SizedBox(height: 3),
+                    Text(steps,
+                        style: const TextStyle(
+                            fontSize: 12.5, color: AppColors.muted)),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 13, color: AppColors.muted),
-          ],
+              const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 13, color: AppColors.muted),
+            ],
+          ),
         ),
       );
 }

@@ -34,8 +34,69 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+  void _forgotPassword(BuildContext context) {
+    final controller = TextEditingController(text: _email.text);
+    final key = GlobalKey<FormState>();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Reset password'),
+        content: Form(
+          key: key,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Prototype build: no email is sent. Enter your account email to simulate the reset flow.',
+                style: TextStyle(fontSize: 13, color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: controller,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email address *',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'Email address is required';
+                  }
+                  if (!RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$')
+                      .hasMatch(v.trim())) {
+                    return 'Invalid email format';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (!key.currentState!.validate()) return;
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(
+                        'Reset link sent to ${controller.text.trim()} (simulated)')),
+              );
+            },
+            child: const Text('Send reset link'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _submit() {    if (!_formKey.currentState!.validate()) return;
     final name = _email.text.split('@').first.replaceAll('.', ' ');
     final pretty = name
         .split(' ')
@@ -267,7 +328,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(fontSize: 13.5)),
                 const Spacer(),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => _forgotPassword(context),
                   child: const Text('Forgot password?'),
                 ),
               ],
@@ -285,6 +346,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () =>
                     Navigator.pushReplacementNamed(context, '/register'),
                 child: const Text('New here? Create an account'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text(
+                'Prototype build: sign-in is simulated — accounts stay in memory on this device.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: AppColors.muted),
               ),
             ),
           ],

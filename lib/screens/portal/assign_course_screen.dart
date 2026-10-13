@@ -27,7 +27,7 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
     final course =
         Content.courses.firstWhere((c) => c.id == _courseId);
     final departments = <String>{
-      for (final e in state.myEmployees) e['dept']!,
+      for (final e in state.roster) e.department,
     };
 
     return PortalShell(
@@ -39,9 +39,12 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
         builder: (context, type) {
           final picker = Panel(
             title: '1 · Choose a course',
-            child: Column(
-              children: [
-                for (final c in Content.courses.take(5))
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 560),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    for (final c in Content.courses)
                   InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () => setState(() => _courseId = c.id),
@@ -92,7 +95,9 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
                       ),
                     ),
                   ),
-              ],
+                  ],
+                ),
+              ),
             ),
           );
 
@@ -119,21 +124,23 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (var i = 0; i < state.myEmployees.length; i++)
-                        if (state.myEmployees[i]['dept'] == dept)
+                      for (var i = 0; i < state.roster.length; i++)
+                        if (state.roster[i].department == dept)
                           FilterChip(
                             avatar: CircleAvatar(
                               radius: 10,
                               backgroundColor: AppColors.deepBlue,
                               child: Text(
-                                state.myEmployees[i]['name']![0],
+                                state.roster[i].name.isEmpty
+                                    ? '?'
+                                    : state.roster[i].name[0],
                                 style: const TextStyle(
                                     fontSize: 10,
                                     color: Colors.white,
                                     fontWeight: FontWeight.w800),
                               ),
                             ),
-                            label: Text(state.myEmployees[i]['name']!),
+                            label: Text(state.roster[i].name),
                             selected: _selected.contains(i),
                             selectedColor: AppColors.purpleSoft,
                             checkmarkColor: AppColors.purple,
@@ -235,6 +242,23 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
       ][m - 1];
 
   void _confirm(BuildContext context, String courseTitle) {
+    final state = AppState.instance;
+    final valid =
+        _selected.where((i) => i < state.roster.length).toList()..sort();
+    if (valid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Select at least one employee')),
+      );
+      return;
+    }
+    final names = [for (final i in valid) state.roster[i].name];
+    state.assignCourse(
+        course: courseTitle, employees: names, deadline: _deadline);
+    setState(() {
+      _selected
+        ..clear()
+        ..addAll(valid);
+    });
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -251,7 +275,7 @@ class _AssignCourseScreenState extends State<AssignCourseScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '“$courseTitle” assigned to ${_selected.length} employee(s).',
+              '“$courseTitle” assigned to ${names.length} employee(s): ${names.join(', ')}.',
               style: const TextStyle(height: 1.6),
             ),
             const SizedBox(height: 10),

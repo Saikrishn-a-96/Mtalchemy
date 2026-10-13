@@ -20,10 +20,12 @@ class ConfirmationScreen extends StatelessWidget {
             'date': '12 Oct 2026',
             'amount': 'RM0.00',
             'status': 'Paid',
+            'type': 'digital',
             'items': '',
           };
-    final hasPhysical = state.orders.isNotEmpty &&
-        state.orders.first['items'].toString().contains('Team Reflection');
+    final type = '${order['type'] ?? 'digital'}';
+    final hasPhysical = type == 'physical' || type == 'mixed';
+    final hasDigital = type == 'digital' || type == 'mixed';
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -155,14 +157,15 @@ class ConfirmationScreen extends StatelessWidget {
                       spacing: 12,
                       runSpacing: 12,
                       children: [
-                        PrimaryButton(
-                          label: 'Download Product',
-                          icon: Icons.download_rounded,
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/digital-library'),
-                        ),
+                        if (hasDigital)
+                          PrimaryButton(
+                            label: 'Open digital library',
+                            icon: Icons.download_rounded,
+                            onPressed: () => Navigator.pushNamed(
+                                context, '/digital-library'),
+                          ),
                         GhostButton(
-                          label: 'Track Order',
+                          label: 'View my orders',
                           onPressed: () =>
                               Navigator.pushNamed(context, '/orders'),
                         ),
@@ -177,12 +180,19 @@ class ConfirmationScreen extends StatelessWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          PrimaryButton(
-                            label: 'Download Product',
-                            icon: Icons.download_rounded,
-                            wide: true,
-                            onPressed: () => Navigator.pushNamed(
-                                context, '/digital-library'),
+                          if (hasDigital)
+                            PrimaryButton(
+                              label: 'Open digital library',
+                              icon: Icons.download_rounded,
+                              wide: true,
+                              onPressed: () => Navigator.pushNamed(
+                                  context, '/digital-library'),
+                            ),
+                          if (hasDigital) const SizedBox(height: 12),
+                          GhostButton(
+                            label: 'View my orders',
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/orders'),
                           ),
                         ],
                       );

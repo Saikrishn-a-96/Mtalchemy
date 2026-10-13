@@ -355,15 +355,13 @@ class QuoteCard extends StatelessWidget {
           const Icon(Icons.format_quote_rounded,
               size: 34, color: AppColors.softYellow),
           const SizedBox(height: 12),
-          Expanded(
-            child: Text(
-              data['quote']!,
-              style: const TextStyle(
-                fontSize: 15.5,
-                height: 1.6,
-                color: AppColors.ink,
-                fontWeight: FontWeight.w500,
-              ),
+          Text(
+            data['quote']!,
+            style: const TextStyle(
+              fontSize: 15.5,
+              height: 1.6,
+              color: AppColors.ink,
+              fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 18),

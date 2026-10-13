@@ -427,6 +427,8 @@ class Content {
       image: Media.bookOpen,
       blurb:
           'A 62-page printable workbook with EQ reflection prompts, trigger maps and weekly practice sheets.',
+      rating: 4.9,
+      reviews: 132,
     ),
     Product(
       id: 'p2',
@@ -437,6 +439,8 @@ class Content {
       image: Media.notebook,
       blurb:
           '18 editable journal templates for Notion and Docs: daily check-in, mood log, gratitude and review.',
+      rating: 4.8,
+      reviews: 118,
     ),
     Product(
       id: 'p3',
@@ -447,6 +451,8 @@ class Content {
       image: Media.desk,
       blurb:
           '48 printable facilitator cards with breath, grounding and reflection activities for teams.',
+      rating: 4.7,
+      reviews: 86,
     ),
     Product(
       id: 'p4',
@@ -457,6 +463,8 @@ class Content {
       image: Media.reading,
       blurb:
           'A field guide of 25 leadership conversations, frameworks and scripts for new managers.',
+      rating: 4.9,
+      reviews: 104,
     ),
     Product(
       id: 'p5',
@@ -468,6 +476,8 @@ class Content {
       blurb:
           'Perfect-bound printed edition of the Emotional Clarity Workbook, shipped within 3 working days.',
       stock: 32,
+      rating: 4.8,
+      reviews: 97,
     ),
     Product(
       id: 'p6',
@@ -479,6 +489,8 @@ class Content {
       blurb:
           'Physical deck of 60 team reflection cards for retrospectives, huddles and offsites.',
       stock: 18,
+      rating: 4.7,
+      reviews: 64,
     ),
     Product(
       id: 'p7',
@@ -490,6 +502,8 @@ class Content {
       blurb:
           'Facilitator kit: workbook, card deck, journal and progress tracker for a 6-week cohort.',
       stock: 9,
+      rating: 4.9,
+      reviews: 41,
     ),
     Product(
       id: 'p8',
@@ -501,6 +515,8 @@ class Content {
       blurb:
           'A5 hardcover journal with monthly reflection spreads and the MT Alchemy motto.',
       stock: 47,
+      rating: 4.8,
+      reviews: 78,
     ),
   ];
 
@@ -678,37 +694,54 @@ class Content {
         department: 'Human Resources',
         course: 'Emotional Intelligence Fundamentals',
         progress: 80,
-        status: 'In Progress'),
+        status: 'In Progress',
+        score: 82,
+        email: 'aisyah@abcsdn.my',
+        role: 'Learner'),
     Employee(
         name: 'Daniel Wong',
         department: 'Finance',
         course: 'Lead with Clarity',
         progress: 100,
-        status: 'Completed'),
+        status: 'Completed',
+        score: 95,
+        email: 'daniel@abcsdn.my',
+        role: 'Department Lead'),
     Employee(
         name: 'Priya Nair',
         department: 'Operations',
         course: 'Communicate with Impact',
         progress: 45,
-        status: 'In Progress'),
+        status: 'In Progress',
+        score: 76,
+        email: 'priya@abcsdn.my',
+        role: 'Learner'),
     Employee(
         name: 'Jason Lee',
         department: 'Sales',
         course: 'Building High-Trust Teams',
         progress: 0,
-        status: 'Not Started'),
+        status: 'Not Started',
+        email: 'jason@abcsdn.my',
+        role: 'Learner'),
     Employee(
         name: 'Nurul Huda',
         department: 'Human Resources',
         course: 'Mindfulness at Work',
         progress: 100,
-        status: 'Completed'),
+        status: 'Completed',
+        score: 91,
+        email: 'nurul@abcsdn.my',
+        role: 'Learner'),
     Employee(
         name: 'Tan Wei Ming',
         department: 'Finance',
         course: 'Workplace Well-being Practitioner',
         progress: 25,
-        status: 'In Progress'),
+        status: 'In Progress',
+        score: 68,
+        email: 'wei.ming@abcsdn.my',
+        role: 'Learner'),
   ];
 
   static const List<Map<String, String>> testimonials = [
