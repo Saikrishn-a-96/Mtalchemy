@@ -47,7 +47,8 @@ class _PortalShellState extends State<PortalShell> {
           padding: const EdgeInsets.fromLTRB(8, 4, 8, 16),
           child: AppLogo(
             markSize: 36,
-            onTap: null,
+            onTap: () => Navigator.pushNamedAndRemoveUntil(
+                context, '/', (r) => false),
           ),
         ),
         Container(

@@ -105,10 +105,14 @@ class _CourseCardState extends State<CourseCard> {
                             label: c.level,
                             color: AppColors.indigo),
                         const SizedBox(width: 8),
-                        Text(
-                          '${c.modules} modules · ${c.duration}',
-                          style: const TextStyle(
-                              fontSize: 12, color: AppColors.muted),
+                        Expanded(
+                          child: Text(
+                            '${c.modules} modules · ${c.duration}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppColors.muted),
+                          ),
                         ),
                       ],
                     ),

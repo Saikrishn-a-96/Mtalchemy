@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../data/brand_data.dart';
 import '../../state/app_state.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/contact_links.dart';
 import '../../widgets/common.dart';
 
 class ContactScreen extends StatefulWidget {
@@ -336,11 +337,17 @@ class _ContactScreenState extends State<ContactScreen> {
               _ContactLine(
                   icon: Icons.phone_outlined,
                   label: 'WhatsApp',
-                  value: Brand.phone),
+                  value: Brand.phone,
+                  onTap: () =>
+                      ContactLinks.phone(context, Brand.phone),
+                  actionHint: 'Tap to call'),
               _ContactLine(
                   icon: Icons.mail_outline_rounded,
                   label: 'Email',
-                  value: Brand.email),
+                  value: Brand.email,
+                  onTap: () =>
+                      ContactLinks.email(context, Brand.email),
+                  actionHint: 'Tap to email'),
               _ContactLine(
                   icon: Icons.place_outlined,
                   label: 'Base',
@@ -348,7 +355,8 @@ class _ContactScreenState extends State<ContactScreen> {
               _ContactLine(
                   icon: Icons.schedule_rounded,
                   label: 'Hours',
-                  value: 'Mon–Fri, 9:00–18:00 (MYT)'),
+                  value: 'Mon–Fri, 9:00–18:00 (MYT)',
+                  tapDisabled: true),
             ],
           ),
         ),
@@ -440,62 +448,90 @@ class _ContactLine extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _ContactLine(
-      {required this.icon, required this.label, required this.value});
+
+  /// Custom tap action (e.g. call / email). Defaults to copying [value].
+  /// Pass [tapDisabled] to render a plain non-tappable row.
+  final VoidCallback? onTap;
+  final String actionHint;
+  final bool tapDisabled;
+
+  const _ContactLine({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.actionHint = 'Tap to copy',
+    this.tapDisabled = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: .14),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 17, color: AppColors.softYellow),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label.toUpperCase(),
+                  style: TextStyle(
+                      fontSize: 10.5,
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white.withValues(alpha: .7))),
+              const SizedBox(height: 3),
+              Text(value,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600)),
+              if (!tapDisabled)
+                Text(actionHint,
+                    style: const TextStyle(
+                        color: Colors.white60, fontSize: 11)),
+            ],
+          ),
+        ),
+        if (!tapDisabled)
+          Icon(
+              onTap == null
+                  ? Icons.copy_rounded
+                  : Icons.open_in_new_rounded,
+              size: 15,
+              color: Colors.white54),
+      ],
+    );
+
+    if (tapDisabled) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: row,
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () async {
-          await Clipboard.setData(ClipboardData(text: value));
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('$label copied to clipboard')),
-            );
-          }
-        },
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 17, color: AppColors.softYellow),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label.toUpperCase(),
-                      style: TextStyle(
-                          fontSize: 10.5,
-                          letterSpacing: 1.2,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white.withValues(alpha: .7))),
-                  const SizedBox(height: 3),
-                  Text(value,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w600)),
-                  const Text('Tap to copy',
-                      style: TextStyle(
-                          color: Colors.white60, fontSize: 11)),
-                ],
-              ),
-            ),
-            const Icon(Icons.copy_rounded,
-                size: 15, color: Colors.white54),
-          ],
-        ),
+        onTap: onTap ??
+            () async {
+              await Clipboard.setData(ClipboardData(text: value));
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$label copied to clipboard')),
+                );
+              }
+            },
+        child: row,
       ),
     );
   }

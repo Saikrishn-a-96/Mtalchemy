@@ -180,23 +180,27 @@ class _Hero extends StatelessWidget {
                             color: Colors.white.withValues(alpha: .08),
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              const Text(
-                                'I’m browsing as an:',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 9),
+                                child: Text(
+                                  'I’m browsing as an:',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600),
+                                ),
                               ),
-                              const SizedBox(width: 10),
                               _RolePill(
                                 label: 'Individual',
                                 selected: !asEmployer,
                                 onTap: () => onToggle(false),
                               ),
-                              const SizedBox(width: 8),
                               _RolePill(
                                 label: 'Employer',
                                 selected: asEmployer,

@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../data/brand_data.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../utils/contact_links.dart';
 import 'app_logo.dart';
 import 'common.dart';
 
@@ -92,7 +93,7 @@ class _TopBar extends StatelessWidget {
           height: 72,
           child: Row(
             children: [
-              _Logo(onTap: () => onGo('/')),
+              _Logo(onTap: () => onGo('/'), compact: !wide),
               const SizedBox(width: 28),
               if (wide)
                 Expanded(
@@ -131,11 +132,12 @@ class _TopBar extends StatelessWidget {
 
 class _Logo extends StatelessWidget {
   final VoidCallback? onTap;
-  const _Logo({required this.onTap});
+  final bool compact;
+  const _Logo({required this.onTap, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
-    return AppLogo(markSize: 40, onTap: onTap);
+    return AppLogo(markSize: 40, onTap: onTap, compact: compact);
   }
 }
 
@@ -488,9 +490,16 @@ class AppFooter extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 _ContactRow(
-                    icon: Icons.mail_outline_rounded, text: Brand.email),
+                    icon: Icons.mail_outline_rounded,
+                    text: Brand.email,
+                    onTap: () =>
+                        ContactLinks.email(context, Brand.email)),
                 const SizedBox(height: 8),
-                _ContactRow(icon: Icons.phone_outlined, text: Brand.phone),
+                _ContactRow(
+                    icon: Icons.phone_outlined,
+                    text: Brand.phone,
+                    onTap: () =>
+                        ContactLinks.phone(context, Brand.phone)),
               ],
             );
 
@@ -607,20 +616,30 @@ class _FooterLink extends StatelessWidget {
 class _ContactRow extends StatelessWidget {
   final IconData icon;
   final String text;
-  const _ContactRow({required this.icon, required this.text});
+  final VoidCallback? onTap;
+  const _ContactRow({required this.icon, required this.text, this.onTap});
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icon, size: 16, color: AppColors.softYellow),
-          const SizedBox(width: 9),
-          Text(
-            text,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .8),
-              fontSize: 13.5,
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            Icon(icon, size: 16, color: AppColors.softYellow),
+            const SizedBox(width: 9),
+            Flexible(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: .8),
+                  fontSize: 13.5,
+                  decoration: onTap == null
+                      ? TextDecoration.none
+                      : TextDecoration.underline,
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
 }

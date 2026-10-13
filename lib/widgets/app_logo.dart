@@ -70,12 +70,16 @@ class AppLogo extends StatelessWidget {
   final Color wordmarkColor;
   final Color? subtitleColor;
 
+  /// When true, only the mark tile is shown (for narrow bars).
+  final bool compact;
+
   const AppLogo({
     super.key,
     this.markSize = 40,
     this.onTap,
     this.wordmarkColor = AppColors.ink,
     this.subtitleColor,
+    this.compact = false,
   });
 
   @override
@@ -87,31 +91,33 @@ class AppLogo extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AppLogoMark(size: markSize),
-          const SizedBox(width: 11),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'MT ALCHEMY',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16.5,
-                  letterSpacing: .6,
-                  color: wordmarkColor,
+          if (!compact) ...[
+            const SizedBox(width: 11),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MT ALCHEMY',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16.5,
+                    letterSpacing: .6,
+                    color: wordmarkColor,
+                  ),
                 ),
-              ),
-              Text(
-                'CONSULTANCY · TRAINING · OD',
-                style: TextStyle(
-                  fontSize: 9.5,
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w700,
-                  color: subtitleColor ?? AppColors.muted,
+                Text(
+                  'CONSULTANCY · TRAINING · OD',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    letterSpacing: 1.1,
+                    fontWeight: FontWeight.w700,
+                    color: subtitleColor ?? AppColors.muted,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
